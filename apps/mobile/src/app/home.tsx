@@ -1,54 +1,122 @@
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
+import { supabase } from '@/lib/supabase';
 
-// M-04 Home (§9.1, детализация первого визита в §9.1a). Данные —
-// моковые; users/characters/streaks/workout_logs подключаются в Слое 2.
-const MOCK_CHARACTER = {
-  name: 'Герой',
-  level: 1,
-  xpCurrent: 0,
-  xpToNext: 100,
-  streak: 0,
-};
+interface CharacterData {
+  name: string;
+  level: number;
+  xpCurrent: number;
+  xpToNext: number;
+  streak: number;
+}
 
+// M-04 Home (§9.1, детализация в §9.1a). users/characters/streaks —
+// реальные запросы (Слой 2), workout_logs подключится в Этапе C.
 export default function HomeScreen() {
   const router = useRouter();
-  const xpProgress = MOCK_CHARACTER.xpCurrent / MOCK_CHARACTER.xpToNext;
+  const { user } = useAuth();
+  const [character, setCharacter] = useState<CharacterData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      if (!user) return;
+
+      const [{ data: characterRow, error: characterError }, { data: streakRow, error: streakError }] =
+        await Promise.all([
+          supabase
+            .from('characters')
+            .select('name, level, xp_current, xp_to_next')
+            .eq('user_id', user.id)
+            .maybeSingle(),
+          supabase.from('streaks').select('current_streak').eq('user_id', user.id).maybeSingle(),
+        ]);
+
+      if (!active) return;
+
+      const firstError = characterError ?? streakError;
+      if (firstError) {
+        console.error(firstError);
+        setError('Не удалось загрузить данные. Попробуйте обновить экран.');
+        setLoading(false);
+        return;
+      }
+
+      if (!characterRow) {
+        setError('Персонаж не найден.');
+        setLoading(false);
+        return;
+      }
+
+      setCharacter({
+        name: characterRow.name,
+        level: characterRow.level,
+        xpCurrent: characterRow.xp_current,
+        xpToNext: characterRow.xp_to_next,
+        streak: streakRow?.current_streak ?? 0,
+      });
+      setLoading(false);
+    }
+
+    load();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.replace('/login');
+  }
 
   return (
     <ThemedView style={styles.container}>
-      <View style={styles.characterCard}>
-        <ThemedText type="overline">Уровень {MOCK_CHARACTER.level}</ThemedText>
-        <ThemedText type="display">{MOCK_CHARACTER.name}</ThemedText>
-
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${Math.max(xpProgress, 0.04) * 100}%` }]} />
-        </View>
-        <ThemedText type="bodyMuted">
-          {MOCK_CHARACTER.xpCurrent}/{MOCK_CHARACTER.xpToNext} XP
-        </ThemedText>
-
-        <View style={styles.streakRow}>
-          <ThemedText type="body">🔥 {MOCK_CHARACTER.streak} дней</ThemedText>
-        </View>
-      </View>
-
-      <View style={styles.startCard}>
-        <ThemedText type="title">Начни путь</ThemedText>
-        <ThemedText type="bodyMuted" style={styles.startHint}>
-          Залогируй первую тренировку, чтобы получить XP и поднять уровень
-        </ThemedText>
-      </View>
-
-      <Pressable style={styles.fab} onPress={() => router.push('/log-workout')}>
-        <ThemedText type="display" style={styles.fabLabel}>
-          +
-        </ThemedText>
+      <Pressable style={styles.logout} onPress={handleLogout}>
+        <ThemedText type="bodyMuted">Выйти</ThemedText>
       </Pressable>
+
+      {loading && <ThemedText type="bodyMuted">Загрузка...</ThemedText>}
+      {error && <ThemedText style={styles.error}>{error}</ThemedText>}
+
+      {!loading && !error && character && (
+        <>
+          <View style={styles.characterCard}>
+            <ThemedText type="overline">Уровень {character.level}</ThemedText>
+            <ThemedText type="display">{character.name}</ThemedText>
+
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${Math.max(character.xpCurrent / character.xpToNext, 0.04) * 100}%` },
+                ]}
+              />
+            </View>
+            <ThemedText type="bodyMuted">
+              {character.xpCurrent}/{character.xpToNext} XP
+            </ThemedText>
+
+            <View style={styles.streakRow}>
+              <ThemedText type="body">🔥 {character.streak} дней</ThemedText>
+            </View>
+          </View>
+
+          <Pressable style={styles.fab} onPress={() => router.push('/log-workout')}>
+            <ThemedText type="display" style={styles.fabLabel}>
+              +
+            </ThemedText>
+          </Pressable>
+        </>
+      )}
     </ThemedView>
   );
 }
@@ -82,16 +150,6 @@ const styles = StyleSheet.create({
   streakRow: {
     marginTop: Spacing.two,
   },
-  startCard: {
-    marginTop: Spacing.four,
-    padding: Spacing.four,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  startHint: {
-    marginTop: Spacing.one,
-  },
   fab: {
     position: 'absolute',
     right: Spacing.four,
@@ -106,5 +164,12 @@ const styles = StyleSheet.create({
   fabLabel: {
     color: Colors.accentText,
     lineHeight: 34,
+  },
+  error: {
+    color: '#ff6b6b',
+  },
+  logout: {
+    alignSelf: 'flex-end',
+    marginBottom: Spacing.two,
   },
 });
