@@ -6,28 +6,59 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
+import { enqueueWorkoutLog, flushWorkoutLogQueue } from '@/lib/offline-queue';
 
-// M-05 Логирование тренировки (§9.1). Вес/повторения автоподставлены
-// из мокового "последнего лога" — реальная история из workout_logs
-// придёт в Слое 2. Этап C (offline-кэш перед отправкой в Supabase)
-// подключится сюда же.
+// M-05 Логирование тренировки (§9.1). Этап C: запись сначала уходит в
+// офлайн-очередь (AsyncStorage), затем — попытка сразу отправить в
+// Supabase. Если сети нет, запись остаётся в очереди и досылается
+// при следующем открытии Home или следующем логе.
 const WORKOUT_TYPES = ['strength', 'cardio', 'flexibility', 'sports', 'other'] as const;
 const LAST_LOG = { weightKg: '40', reps: '10' };
 
 export default function LogWorkoutScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [type, setType] = useState<(typeof WORKOUT_TYPES)[number]>('strength');
   const [weight, setWeight] = useState(LAST_LOG.weightKg);
   const [reps, setReps] = useState(LAST_LOG.reps);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  function handleSave() {
-    if (!weight || !reps) {
+  async function handleSave() {
+    if (!user) return;
+
+    const weightKg = Number(weight);
+    const repsCount = Number(reps);
+    if (!weight || !reps || Number.isNaN(weightKg) || Number.isNaN(repsCount)) {
       setError('Заполните вес и повторения.');
       return;
     }
     setError(null);
-    // Слой 2: supabase.from('workout_logs').insert(...) + offline-очередь (Этап C)
+    setSaving(true);
+
+    // Заглушка вместо Edge Function on-workout-logged (§13.2) — та
+    // считает реальный XP по приросту к предыдущему логу того же типа.
+    // Здесь — простая формула только чтобы протестировать offline-пайплайн.
+    const xpEarned = Math.round((weightKg * repsCount) / 10);
+    const currencyEarned = Math.round(xpEarned / 2);
+
+    await enqueueWorkoutLog({
+      user_id: user.id,
+      type,
+      weight_kg: weightKg,
+      reps: repsCount,
+      duration_minutes: null,
+      note: null,
+      xp_earned: xpEarned,
+      currency_earned: currencyEarned,
+      logged_at: new Date().toISOString(),
+      platform_origin: 'ios',
+    });
+
+    await flushWorkoutLogQueue(user.id);
+
+    setSaving(false);
     router.back();
   }
 
@@ -73,7 +104,7 @@ export default function LogWorkoutScreen() {
 
       {error && <ThemedText style={styles.error}>{error}</ThemedText>}
 
-      <Button label="Сохранить" onPress={handleSave} />
+      <Button label={saving ? 'Сохранение...' : 'Сохранить'} onPress={handleSave} disabled={saving} />
     </ThemedView>
   );
 }

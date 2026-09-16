@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { flushWorkoutLogQueue, getPendingCount } from '@/lib/offline-queue';
 import { supabase } from '@/lib/supabase';
 
 interface CharacterData {
@@ -17,13 +18,32 @@ interface CharacterData {
 }
 
 // M-04 Home (§9.1, детализация в §9.1a). users/characters/streaks —
-// реальные запросы (Слой 2), workout_logs подключится в Этапе C.
+// реальные запросы. Этап C: досылает отложенные workout_logs из
+// офлайн-очереди при каждом открытии экрана.
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [character, setCharacter] = useState<CharacterData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Этап C: досылаем всё, что накопилось офлайн, при каждом открытии Home.
+  useEffect(() => {
+    let active = true;
+
+    async function sync() {
+      if (!user) return;
+      await flushWorkoutLogQueue(user.id);
+      const count = await getPendingCount(user.id);
+      if (active) setPendingCount(count);
+    }
+
+    sync();
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     let active = true;
@@ -108,6 +128,12 @@ export default function HomeScreen() {
             <View style={styles.streakRow}>
               <ThemedText type="body">🔥 {character.streak} дней</ThemedText>
             </View>
+
+            {pendingCount > 0 && (
+              <ThemedText type="bodyMuted" style={styles.pending}>
+                {pendingCount} трен. ждут синхронизации
+              </ThemedText>
+            )}
           </View>
 
           <Pressable style={styles.fab} onPress={() => router.push('/log-workout')}>
@@ -171,5 +197,9 @@ const styles = StyleSheet.create({
   logout: {
     alignSelf: 'flex-end',
     marginBottom: Spacing.two,
+  },
+  pending: {
+    marginTop: Spacing.one,
+    color: Colors.accent,
   },
 });
