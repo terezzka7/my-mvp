@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom'
 
 export interface PublicProfileSummary {
   username: string
-  displayName: string
+  displayName: string | null
   level: number
-  topAchievement: string
+  xpCurrent: number
 }
 
 interface CardGridProps {
@@ -29,9 +29,11 @@ export function CardGrid({ profiles }: CardGridProps) {
             to={`/u/${profile.username}`}
             className="rounded-xl border border-white/10 bg-white/5 p-6 hover:border-accent"
           >
-            <p className="font-display text-lg font-bold">{profile.displayName}</p>
+            <p className="font-display text-lg font-bold">
+              {profile.displayName ?? profile.username}
+            </p>
             <p className="mt-1 text-sm text-white/50">Уровень {profile.level}</p>
-            <p className="mt-3 text-sm text-accent">{profile.topAchievement}</p>
+            <p className="mt-3 text-sm text-accent">{profile.xpCurrent} XP</p>
           </Link>
         ))}
       </div>
