@@ -23,13 +23,7 @@ export function Profile() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!active) return
-
-      if (!user) {
-        setError('Войдите, чтобы посмотреть профиль.')
-        setLoading(false)
-        return
-      }
+      if (!active || !user) return
 
       const [{ data: me, error: meError }, { data: character, error: characterError },
         { data: streak, error: streakError }, { data: activeChallenges, error: challengesError }] =

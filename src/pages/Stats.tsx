@@ -29,13 +29,7 @@ export function Stats() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!active) return
-
-      if (!user) {
-        setError('Войдите, чтобы увидеть статистику.')
-        setLoading(false)
-        return
-      }
+      if (!active || !user) return
 
       const { data, error } = await supabase
         .from('workout_logs')

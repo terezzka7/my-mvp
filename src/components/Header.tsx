@@ -1,16 +1,24 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { APP_NAME } from '../lib/constants'
+import { supabase } from '../lib/supabase'
 
-const NAV_LINKS = [
-  { label: 'Главная', to: '/' },
+const PROTECTED_LINKS = [
   { label: 'Профиль', to: '/profile' },
   { label: 'История', to: '/profile/history' },
   { label: 'Статистика', to: '/profile/stats' },
   { label: 'Настройки', to: '/settings' },
-  { label: 'Войти', to: '/login' },
 ]
 
 export function Header() {
+  const { user, loading } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    navigate('/login')
+  }
+
   return (
     <header className="border-b border-white/10 px-6 py-4">
       <div className="mx-auto flex max-w-6xl items-center justify-between">
@@ -18,18 +26,43 @@ export function Header() {
           {APP_NAME}
         </Link>
         <nav className="flex items-center gap-6 text-sm text-white/70">
-          {NAV_LINKS.map((link) => (
-            <Link key={link.to} to={link.to} className="hover:text-accent">
-              {link.label}
-            </Link>
-          ))}
+          <Link to="/" className="hover:text-accent">
+            Главная
+          </Link>
+          {!loading && user
+            ? PROTECTED_LINKS.map((link) => (
+                <Link key={link.to} to={link.to} className="hover:text-accent">
+                  {link.label}
+                </Link>
+              ))
+            : null}
+          {!loading && !user ? (
+            <>
+              <Link to="/login" className="hover:text-accent">
+                Войти
+              </Link>
+              <Link to="/signup" className="hover:text-accent">
+                Регистрация
+              </Link>
+            </>
+          ) : null}
         </nav>
-        <a
-          href="#"
-          className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-black"
-        >
-          Скачать
-        </a>
+        {!loading && user ? (
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-full border border-white/20 px-5 py-2 text-sm font-semibold hover:border-accent"
+          >
+            Выйти
+          </button>
+        ) : (
+          <a
+            href="#"
+            className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-black"
+          >
+            Скачать
+          </a>
+        )}
       </div>
     </header>
   )

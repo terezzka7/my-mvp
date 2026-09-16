@@ -20,13 +20,7 @@ export function Settings() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      if (!active) return
-
-      if (!user) {
-        setError('Войдите, чтобы изменить настройки.')
-        setLoading(false)
-        return
-      }
+      if (!active || !user) return
 
       const { data, error } = await supabase
         .from('users')
