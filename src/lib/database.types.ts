@@ -146,6 +146,15 @@ export type TemplateAssetsRow = {
   updated_at: string
 }
 
+export type PublicProfileView = {
+  user_id: string
+  username: string
+  display_name: string | null
+  level: number
+  xp_current: number
+  image_url: string
+}
+
 type Relationship = {
   foreignKeyName: string
   columns: string[]
@@ -288,7 +297,12 @@ export type Database = {
       >
       template_assets: TableDef<TemplateAssetsRow>
     }
-    Views: Record<string, never>
+    Views: {
+      public_profiles: {
+        Row: PublicProfileView
+        Relationships: []
+      }
+    }
     Functions: Record<string, never>
     Enums: {
       oauth_provider: OauthProvider

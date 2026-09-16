@@ -16,10 +16,17 @@ export function WorkoutDetail() {
     async function load() {
       if (!id) return
 
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!active || !user) return
+
       const { data, error } = await supabase
         .from('workout_logs')
         .select('*')
         .eq('id', id)
+        .eq('user_id', user.id)
         .maybeSingle()
 
       if (!active) return

@@ -21,53 +21,49 @@ export function PublicProfile() {
     async function load() {
       if (!username) return
 
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('id, display_name')
+      // Публичный профиль читает view public_profiles (см. supabase/rls.sql) —
+      // таблицы users/characters сами по себе приватны после включения RLS.
+      const { data: profileRow, error: profileError } = await supabase
+        .from('public_profiles')
+        .select('user_id, display_name, level')
         .eq('username', username)
         .maybeSingle()
 
       if (!active) return
 
-      if (userError) {
-        console.error(userError)
+      if (profileError) {
+        console.error(profileError)
         setError('Не удалось загрузить профиль. Попробуйте обновить страницу.')
         setLoading(false)
         return
       }
 
-      if (!user) {
+      if (!profileRow) {
         setError('Профиль не найден.')
         setLoading(false)
         return
       }
 
-      const { data: character, error: characterError } = await supabase
-        .from('characters')
-        .select('level')
-        .eq('user_id', user.id)
-        .maybeSingle()
-
+      // §10: у user_challenges нет публичной SELECT-политики (только
+      // auth.uid() = user_id) — для чужого профиля этот запрос вернёт
+      // пусто под RLS, для своего собственного покажет реальные достижения.
       const { data: completedChallenges, error: challengesError } = await supabase
         .from('user_challenges')
         .select('completed_at, challenges(title)')
-        .eq('user_id', user.id)
+        .eq('user_id', profileRow.user_id)
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
         .limit(3)
 
       if (!active) return
 
-      if (characterError || challengesError) {
-        console.error(characterError ?? challengesError)
-        setError('Не удалось загрузить профиль. Попробуйте обновить страницу.')
-        setLoading(false)
-        return
+      if (challengesError) {
+        console.error(challengesError)
       }
 
       setProfile({
-        displayName: user.display_name,
-        level: character?.level ?? 1,
+        displayName: profileRow.display_name,
+        level: profileRow.level,
         achievements: (completedChallenges ?? []).flatMap((row) => {
           const challenge = row.challenges as unknown as { title: string } | null
           return challenge ? [challenge.title] : []

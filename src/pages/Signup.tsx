@@ -31,7 +31,11 @@ export function Signup() {
     }
 
     setSubmitting(true)
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { platform_origin: 'web' } },
+    })
     setSubmitting(false)
 
     if (signUpError) {

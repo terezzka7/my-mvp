@@ -14,51 +14,29 @@ export function Landing() {
     let active = true
 
     async function load() {
-      const { data: characters, error: charactersError } = await supabase
-        .from('characters')
-        .select('user_id, level, xp_current')
+      // Публичный каталог читает view public_profiles (см. supabase/rls.sql) —
+      // после включения RLS таблицы users/characters сами по себе приватные.
+      const { data, error } = await supabase
+        .from('public_profiles')
+        .select('username, display_name, level, xp_current')
         .order('level', { ascending: false })
         .limit(12)
 
       if (!active) return
 
-      if (charactersError) {
-        console.error(charactersError)
+      if (error) {
+        console.error(error)
         setError('Не удалось загрузить публичные профили. Попробуйте обновить страницу.')
-        setLoading(false)
-        return
+      } else {
+        setProfiles(
+          data.map((row) => ({
+            username: row.username,
+            displayName: row.display_name,
+            level: row.level,
+            xpCurrent: row.xp_current,
+          })),
+        )
       }
-
-      const userIds = characters.map((character) => character.user_id)
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('id, username, display_name')
-        .in('id', userIds)
-
-      if (!active) return
-
-      if (usersError) {
-        console.error(usersError)
-        setError('Не удалось загрузить публичные профили. Попробуйте обновить страницу.')
-        setLoading(false)
-        return
-      }
-
-      const usersById = new Map(users.map((user) => [user.id, user]))
-      setProfiles(
-        characters.flatMap((character) => {
-          const user = usersById.get(character.user_id)
-          if (!user) return []
-          return [
-            {
-              username: user.username,
-              displayName: user.display_name,
-              level: character.level,
-              xpCurrent: character.xp_current,
-            },
-          ]
-        }),
-      )
       setLoading(false)
     }
 
