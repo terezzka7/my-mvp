@@ -47,3 +47,20 @@ ENVIRONMENT:
 * Frontend env vars follow the framework convention
 (VITE_* for Vite, NEXT_PUBLIC_* for Next.js, etc.).
 * Put secrets in .env.local. Never commit .env.local (add to .gitignore).
+
+MOBILE SURFACE (when working in apps/mobile/):
+- Stack: from product_book.md §11.2 row "Mobile" (Expo + RN by default,
+  or whatever is listed). TypeScript + Expo Router (file-based routing).
+- Reuses the SAME Supabase project as the web — URL/anon key are read
+  from apps/mobile/.env (Expo convention: EXPO_PUBLIC_*).
+- Reuses Auth — same users table, same JWT tokens (see §11.3).
+  Session storage in React Native is AsyncStorage (NOT localStorage).
+- Read §7.4 first: MOBILE is either PRIMARY or COMPANION in this product.
+  * If MOBILE = PRIMARY → build the full main flow from §9 (Mobile table)
+    and §13.2 (Must Have items tagged Primary + Common).
+  * If MOBILE = COMPANION → build a focused companion experience.
+- Web surface (built on L3) reads §9 (Web table) — NOT this mobile pattern.
+- Native permissions (camera, location, push, biometric) — request via
+  expo-* modules with clear copy explaining WHY each is needed.
+- Do not duplicate web layout 1:1 in mobile. Mobile uses Stack/Tabs
+  navigation, not header+sidebar. Touch targets ≥ 44pt, text ≥ 16pt.
