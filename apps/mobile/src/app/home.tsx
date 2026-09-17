@@ -1,6 +1,6 @@
-import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -15,11 +15,14 @@ interface CharacterData {
   xpCurrent: number;
   xpToNext: number;
   streak: number;
+  imageUrl: string;
 }
 
 // M-04 Home (§9.1, детализация в §9.1a). users/characters/streaks —
 // реальные запросы. Этап C: досылает отложенные workout_logs из
-// офлайн-очереди при каждом открытии экрана.
+// офлайн-очереди. Обновляется по фокусу экрана (useFocusEffect), а не
+// только при монтировании — иначе после лога тренировки и возврата с
+// /log-workout Home продолжал бы показывать старые данные.
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -28,70 +31,61 @@ export default function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Этап C: досылаем всё, что накопилось офлайн, при каждом открытии Home.
-  useEffect(() => {
-    let active = true;
-
-    async function sync() {
+  useFocusEffect(
+    useCallback(() => {
       if (!user) return;
-      await flushWorkoutLogQueue(user.id);
-      const count = await getPendingCount(user.id);
-      if (active) setPendingCount(count);
-    }
+      const currentUser = user;
+      let active = true;
 
-    sync();
-    return () => {
-      active = false;
-    };
-  }, [user]);
+      async function syncAndLoad() {
+        await flushWorkoutLogQueue(currentUser.id);
+        const count = await getPendingCount(currentUser.id);
+        if (active) setPendingCount(count);
 
-  useEffect(() => {
-    let active = true;
+        const [{ data: characterRow, error: characterError }, { data: streakRow, error: streakError }] =
+          await Promise.all([
+            supabase
+              .from('characters')
+              .select('name, level, xp_current, xp_to_next, image_url')
+              .eq('user_id', currentUser.id)
+              .maybeSingle(),
+            supabase.from('streaks').select('current_streak').eq('user_id', currentUser.id).maybeSingle(),
+          ]);
 
-    async function load() {
-      if (!user) return;
+        if (!active) return;
 
-      const [{ data: characterRow, error: characterError }, { data: streakRow, error: streakError }] =
-        await Promise.all([
-          supabase
-            .from('characters')
-            .select('name, level, xp_current, xp_to_next')
-            .eq('user_id', user.id)
-            .maybeSingle(),
-          supabase.from('streaks').select('current_streak').eq('user_id', user.id).maybeSingle(),
-        ]);
+        const firstError = characterError ?? streakError;
+        if (firstError) {
+          console.error(firstError);
+          setError('Не удалось загрузить данные. Попробуйте обновить экран.');
+          setLoading(false);
+          return;
+        }
 
-      if (!active) return;
+        if (!characterRow) {
+          setError('Персонаж не найден.');
+          setLoading(false);
+          return;
+        }
 
-      const firstError = characterError ?? streakError;
-      if (firstError) {
-        console.error(firstError);
-        setError('Не удалось загрузить данные. Попробуйте обновить экран.');
+        setError(null);
+        setCharacter({
+          name: characterRow.name,
+          level: characterRow.level,
+          xpCurrent: characterRow.xp_current,
+          xpToNext: characterRow.xp_to_next,
+          streak: streakRow?.current_streak ?? 0,
+          imageUrl: characterRow.image_url,
+        });
         setLoading(false);
-        return;
       }
 
-      if (!characterRow) {
-        setError('Персонаж не найден.');
-        setLoading(false);
-        return;
-      }
-
-      setCharacter({
-        name: characterRow.name,
-        level: characterRow.level,
-        xpCurrent: characterRow.xp_current,
-        xpToNext: characterRow.xp_to_next,
-        streak: streakRow?.current_streak ?? 0,
-      });
-      setLoading(false);
-    }
-
-    load();
-    return () => {
-      active = false;
-    };
-  }, [user]);
+      syncAndLoad();
+      return () => {
+        active = false;
+      };
+    }, [user]),
+  );
 
   async function handleLogout() {
     await supabase.auth.signOut();
@@ -110,6 +104,8 @@ export default function HomeScreen() {
       {!loading && !error && character && (
         <>
           <View style={styles.characterCard}>
+            <Image source={{ uri: character.imageUrl }} style={styles.characterImage} />
+
             <ThemedText type="overline">Уровень {character.level}</ThemedText>
             <ThemedText type="display">{character.name}</ThemedText>
 
@@ -160,6 +156,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     padding: Spacing.four,
     gap: Spacing.two,
+  },
+  characterImage: {
+    width: 96,
+    height: 96,
+    borderRadius: Radius.card,
+    marginBottom: Spacing.two,
   },
   progressTrack: {
     height: 8,

@@ -18,7 +18,7 @@ const LAST_LOG = { weightKg: '40', reps: '10' };
 
 export default function LogWorkoutScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [type, setType] = useState<(typeof WORKOUT_TYPES)[number]>('strength');
   const [weight, setWeight] = useState(LAST_LOG.weightKg);
   const [reps, setReps] = useState(LAST_LOG.reps);
@@ -26,7 +26,17 @@ export default function LogWorkoutScreen() {
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
-    if (!user) return;
+    // Баг, который реально терял тренировки: экран монтируется со своим
+    // useAuth() (getSession() ещё не резолвнулся), и быстрый тап
+    // по "Сохранить" раньше отдавал silent no-op — ни ошибки, ни записи.
+    if (!user) {
+      setError(
+        authLoading
+          ? 'Подождите секунду, проверяем сессию...'
+          : 'Сессия не найдена. Войдите заново.',
+      );
+      return;
+    }
 
     const weightKg = Number(weight);
     const repsCount = Number(reps);
@@ -104,7 +114,11 @@ export default function LogWorkoutScreen() {
 
       {error && <ThemedText style={styles.error}>{error}</ThemedText>}
 
-      <Button label={saving ? 'Сохранение...' : 'Сохранить'} onPress={handleSave} disabled={saving} />
+      <Button
+        label={saving ? 'Сохранение...' : 'Сохранить'}
+        onPress={handleSave}
+        disabled={saving || authLoading}
+      />
     </ThemedView>
   );
 }
