@@ -9,10 +9,11 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { enqueueWorkoutLog, flushWorkoutLogQueue } from '@/lib/offline-queue';
 
-// M-05 Логирование тренировки (§9.1). Этап C: запись сначала уходит в
-// офлайн-очередь (AsyncStorage), затем — попытка сразу отправить в
-// Supabase. Если сети нет, запись остаётся в очереди и досылается
-// при следующем открытии Home или следующем логе.
+// M-05 Логирование тренировки (§9.1). Запись сначала уходит в офлайн-
+// очередь (AsyncStorage), затем — попытка сразу синхронизировать через
+// Edge Function on-workout-logged (считает XP по приросту и обновляет
+// streaks/characters, §10/§13.2). Если сети нет, запись остаётся в
+// очереди и досылается при следующем открытии Home или следующем логе.
 const WORKOUT_TYPES = ['strength', 'cardio', 'flexibility', 'sports', 'other'] as const;
 const LAST_LOG = { weightKg: '40', reps: '10' };
 
@@ -47,12 +48,6 @@ export default function LogWorkoutScreen() {
     setError(null);
     setSaving(true);
 
-    // Заглушка вместо Edge Function on-workout-logged (§13.2) — та
-    // считает реальный XP по приросту к предыдущему логу того же типа.
-    // Здесь — простая формула только чтобы протестировать offline-пайплайн.
-    const xpEarned = Math.round((weightKg * repsCount) / 10);
-    const currencyEarned = Math.round(xpEarned / 2);
-
     await enqueueWorkoutLog({
       user_id: user.id,
       type,
@@ -60,8 +55,6 @@ export default function LogWorkoutScreen() {
       reps: repsCount,
       duration_minutes: null,
       note: null,
-      xp_earned: xpEarned,
-      currency_earned: currencyEarned,
       logged_at: new Date().toISOString(),
       platform_origin: 'ios',
     });

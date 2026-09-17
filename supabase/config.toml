@@ -2,3 +2,6 @@ project_id = "btarlycwkcyjaqvvvnvx"
 
 [functions.assemble-character]
 verify_jwt = true
+
+[functions.on-workout-logged]
+verify_jwt = true

@@ -13,8 +13,6 @@ export interface PendingWorkoutLog {
   reps: number
   duration_minutes: null
   note: null
-  xp_earned: number
-  currency_earned: number
   logged_at: string
   platform_origin: 'ios'
 }
@@ -44,6 +42,11 @@ export async function getPendingCount(userId: string): Promise<number> {
 // Пытается отправить в Supabase каждую отложенную запись по очереди.
 // Останавливается на первой сетевой ошибке — остальное остаётся в очереди
 // до следующей попытки (следующий лог или открытие Home).
+//
+// xp_earned/currency_earned больше не считает клиент — каждая запись
+// уходит через Edge Function on-workout-logged (§10/§13.2), которая
+// сама вычисляет XP по приросту к предыдущему логу и обновляет
+// streaks/characters.
 export async function flushWorkoutLogQueue(userId: string): Promise<{ synced: number; remaining: number }> {
   const queue = await readQueue()
   const mine = queue.filter((entry) => entry.user_id === userId)
@@ -53,11 +56,11 @@ export async function flushWorkoutLogQueue(userId: string): Promise<{ synced: nu
   const stillPending: PendingWorkoutLog[] = []
 
   for (let i = 0; i < mine.length; i += 1) {
-    const { localId, ...payload } = mine[i]
-    const { error } = await supabase.from('workout_logs').insert(payload)
+    const { localId, user_id, ...payload } = mine[i]
+    const { error } = await supabase.functions.invoke('on-workout-logged', { body: payload })
 
     if (error) {
-      console.error('flushWorkoutLogQueue insert failed:', error.message)
+      console.error('flushWorkoutLogQueue invoke failed:', error.message)
       stillPending.push(...mine.slice(i))
       break
     }
