@@ -50,7 +50,7 @@ export default function CharacterNameScreen() {
         />
 
         <ThemedText type="bodyMuted" style={styles.hint}>
-          Имя видно на публичной странице и шеринг-карточке.
+          Имя видно на публичной странице{'\n'}и шеринг-карточке.
         </ThemedText>
       </View>
 
