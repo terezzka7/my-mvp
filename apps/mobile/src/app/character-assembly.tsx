@@ -46,6 +46,7 @@ export default function CharacterAssemblyScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const reveal = useRef(new Animated.Value(0)).current;
+  const sway = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.spring(reveal, {
@@ -53,8 +54,18 @@ export default function CharacterAssemblyScreen() {
       friction: 5,
       tension: 40,
       useNativeDriver: true,
-    }).start();
-  }, [reveal]);
+    }).start(() => {
+      // Лёгкое покачивание из стороны в сторону — начинается только
+      // после того, как герой "появился", чтобы не мешать entrance.
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(sway, { toValue: 1, duration: 1200, useNativeDriver: true }),
+          Animated.timing(sway, { toValue: -1, duration: 2400, useNativeDriver: true }),
+          Animated.timing(sway, { toValue: 0, duration: 1200, useNativeDriver: true }),
+        ]),
+      ).start();
+    });
+  }, [reveal, sway]);
 
   async function handleConfirm() {
     if (!user) {
@@ -107,7 +118,10 @@ export default function CharacterAssemblyScreen() {
             styles.imageWrap,
             {
               opacity: reveal,
-              transform: [{ scale: reveal.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }],
+              transform: [
+                { scale: reveal.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) },
+                { rotate: sway.interpolate({ inputRange: [-1, 1], outputRange: ['-3deg', '3deg'] }) },
+              ],
             },
           ]}
         >
