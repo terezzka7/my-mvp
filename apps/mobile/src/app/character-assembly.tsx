@@ -1,7 +1,7 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, ScrollView, StyleSheet, View, type ImageSourcePropType } from 'react-native';
+import { useState } from 'react';
+import { Image, ScrollView, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
@@ -44,28 +44,6 @@ export default function CharacterAssemblyScreen() {
   }>();
   const [assembling, setAssembling] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const reveal = useRef(new Animated.Value(0)).current;
-  const sway = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(reveal, {
-      toValue: 1,
-      friction: 5,
-      tension: 40,
-      useNativeDriver: true,
-    }).start(() => {
-      // Лёгкое покачивание из стороны в сторону — начинается только
-      // после того, как герой "появился", чтобы не мешать entrance.
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(sway, { toValue: 1, duration: 1200, useNativeDriver: true }),
-          Animated.timing(sway, { toValue: -1, duration: 2400, useNativeDriver: true }),
-          Animated.timing(sway, { toValue: 0, duration: 1200, useNativeDriver: true }),
-        ]),
-      ).start();
-    });
-  }, [reveal, sway]);
 
   async function handleConfirm() {
     if (!user) {
@@ -113,20 +91,9 @@ export default function CharacterAssemblyScreen() {
           </View>
         </View>
 
-        <Animated.View
-          style={[
-            styles.imageWrap,
-            {
-              opacity: reveal,
-              transform: [
-                { scale: reveal.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) },
-                { rotate: sway.interpolate({ inputRange: [-1, 1], outputRange: ['-3deg', '3deg'] }) },
-              ],
-            },
-          ]}
-        >
+        <View style={styles.imageWrap}>
           <Image source={DEMO_IMAGES[bodyTag]} style={styles.image} resizeMode="contain" />
-        </Animated.View>
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
