@@ -13,7 +13,11 @@ import { supabase } from '@/lib/supabase';
 // упрощение, что и на web (§11.3 Apple ID/Google — отдельный шаг).
 export default function LoginScreen() {
   const router = useRouter();
-  const { bodyTag, styleTag } = useLocalSearchParams<{ bodyTag?: string; styleTag?: string }>();
+  const { bodyTag, styleTag, name: characterName } = useLocalSearchParams<{
+    bodyTag?: string;
+    styleTag?: string;
+    name?: string;
+  }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -37,7 +41,10 @@ export default function LoginScreen() {
     }
 
     if (bodyTag && styleTag) {
-      router.replace({ pathname: '/character-assembly', params: { bodyTag, styleTag } });
+      router.replace({
+        pathname: '/character-assembly',
+        params: { bodyTag, styleTag, name: characterName ?? '' },
+      });
       return;
     }
 
@@ -87,7 +94,14 @@ export default function LoginScreen() {
 
       <Button label={submitting ? 'Вход...' : 'Войти'} onPress={handleSubmit} disabled={submitting} />
 
-      <Link href="/signup" style={styles.link}>
+      <Link
+        href={
+          bodyTag && styleTag
+            ? { pathname: '/signup', params: { bodyTag, styleTag, name: characterName ?? '' } }
+            : '/signup'
+        }
+        style={styles.link}
+      >
         <ThemedText type="bodyMuted">Нет аккаунта? Зарегистрироваться</ThemedText>
       </Link>
     </ThemedView>

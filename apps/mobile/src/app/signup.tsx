@@ -10,7 +10,11 @@ import { supabase } from '@/lib/supabase';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { bodyTag, styleTag } = useLocalSearchParams<{ bodyTag?: string; styleTag?: string }>();
+  const { bodyTag, styleTag, name: characterName } = useLocalSearchParams<{
+    bodyTag?: string;
+    styleTag?: string;
+    name?: string;
+  }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -51,7 +55,10 @@ export default function SignupScreen() {
 
     if (data.session) {
       if (bodyTag && styleTag) {
-        router.replace({ pathname: '/character-assembly', params: { bodyTag, styleTag } });
+        router.replace({
+          pathname: '/character-assembly',
+          params: { bodyTag, styleTag, name: characterName ?? '' },
+        });
       } else {
         router.replace('/onboarding');
       }
@@ -111,7 +118,11 @@ export default function SignupScreen() {
       />
 
       <Link
-        href={bodyTag && styleTag ? { pathname: '/login', params: { bodyTag, styleTag } } : '/login'}
+        href={
+          bodyTag && styleTag
+            ? { pathname: '/login', params: { bodyTag, styleTag, name: characterName ?? '' } }
+            : '/login'
+        }
         style={styles.link}
       >
         <ThemedText type="bodyMuted">Уже есть аккаунт? Войти</ThemedText>

@@ -6,14 +6,23 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 
 // M-03 Сборка персонажа (§9.1, §9.1a). "Это я" вызывает Edge Function
 // assemble-character (§7.1/§11.1/§13.2), которая подбирает шаблоны по
 // критериям, компонует изображение и сохраняет строку в characters.
+// Имя (введено на M-02b, до входа) в саму функцию не передаётся — она
+// его не знает, поэтому пишем его отдельным UPDATE своей же строки
+// сразу после сборки (RLS разрешает владельцу обновлять characters).
 export default function CharacterAssemblyScreen() {
   const router = useRouter();
-  const { bodyTag, styleTag } = useLocalSearchParams<{ bodyTag: string; styleTag: string }>();
+  const { user } = useAuth();
+  const { bodyTag, styleTag, name } = useLocalSearchParams<{
+    bodyTag: string;
+    styleTag: string;
+    name?: string;
+  }>();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [assembling, setAssembling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,14 +35,24 @@ export default function CharacterAssemblyScreen() {
       body: { bodyTag, styleTag },
     });
 
-    setAssembling(false);
-
     if (invokeError || !data?.character) {
+      setAssembling(false);
       console.error(invokeError);
       setError('Не удалось собрать персонажа. Попробуйте ещё раз.');
       return;
     }
 
+    if (name && user) {
+      const { error: nameError } = await supabase
+        .from('characters')
+        .update({ name })
+        .eq('user_id', user.id);
+      if (nameError) {
+        console.error(nameError);
+      }
+    }
+
+    setAssembling(false);
     setPreviewUrl(data.character.image_url);
     router.replace('/home');
   }
