@@ -1,4 +1,4 @@
--- Fitness RPG Tracker — RLS policies from product_book.md §10 "Правила доступа (RLS)"
+-- Buildyfit — RLS policies from product_book.md §10 "Правила доступа (RLS)"
 -- Run after supabase/schema.sql. Idempotent: safe to re-run (drops policies/view first).
 
 -- ============================================================
