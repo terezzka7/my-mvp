@@ -1,1 +1,1 @@
-export const APP_NAME = 'Fitness RPG Tracker'
+export const APP_NAME = 'Buildyfit'

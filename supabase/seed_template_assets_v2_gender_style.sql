@@ -1,4 +1,4 @@
--- Fitness RPG Tracker — onboarding criteria change: "телосложение" (body
+-- Buildyfit — onboarding criteria change: "телосложение" (body
 -- type) → "пол" (gender); style set 3 → 4 (Классика/Ретро/Стрит/Футуризм).
 -- Removes the old 7 placeholder template_assets rows and inserts the new
 -- 6 (2 body + 4 style). Old Storage objects are left in place (harmless,

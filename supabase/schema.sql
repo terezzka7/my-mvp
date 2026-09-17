@@ -1,4 +1,4 @@
--- Fitness RPG Tracker — schema from product_book.md §10 (МОДЕЛЬ ДАННЫХ)
+-- Buildyfit — schema from product_book.md §10 (МОДЕЛЬ ДАННЫХ)
 -- Tables: users, characters, workout_logs, challenges, user_challenges,
 --         items, user_items, share_cards, streaks, template_assets
 -- No RLS policies here — separate step.

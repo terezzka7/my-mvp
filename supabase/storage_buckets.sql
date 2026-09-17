@@ -1,4 +1,4 @@
--- Fitness RPG Tracker — Storage buckets for template_assets / characters
+-- Buildyfit — Storage buckets for template_assets / characters
 -- assembly pipeline (§7.1/§11.1/§13.2 assemble-character).
 -- Run in Supabase SQL Editor before seeding placeholder template assets.
 

@@ -1,4 +1,4 @@
--- Fitness RPG Tracker — "Auth trigger" from product_book.md §10 (users.INSERT)
+-- Buildyfit — "Auth trigger" from product_book.md §10 (users.INSERT)
 -- Creates the public.users row automatically whenever a new auth.users row
 -- appears (signup), and backfills existing auth users that predate this
 -- trigger (e.g. accounts created while testing auth before this was wired).

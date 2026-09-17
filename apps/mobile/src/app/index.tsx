@@ -1,10 +1,10 @@
 import { useRouter } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 
@@ -47,9 +47,12 @@ export default function SplashScreen() {
   }, [loading, user, router]);
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="display">Fitness RPG Tracker</ThemedText>
-    </ThemedView>
+    <View style={styles.container}>
+      <StatusBar style="dark" />
+      <ThemedText type="display" style={styles.title}>
+        Buildyfit
+      </ThemedText>
+    </View>
   );
 }
 
@@ -59,5 +62,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: Spacing.four,
+    backgroundColor: Colors.accent,
+  },
+  title: {
+    color: '#000000',
   },
 });

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Fitness RPG Tracker",
-    "slug": "fitness-rpg-tracker",
+    "name": "Buildyfit",
+    "slug": "buildyfit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "fitnessrpgtracker",
+    "scheme": "buildyfit",
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon"
@@ -28,7 +28,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0D0D0D",
+          "backgroundColor": "#C6FF00",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
