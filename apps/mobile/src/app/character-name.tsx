@@ -34,6 +34,7 @@ export default function CharacterNameScreen() {
   return (
     <ThemedView style={styles.container}>
       <View style={styles.content}>
+        <ThemedText type="overline">Шаг 2 из 2</ThemedText>
         <ThemedText type="display" style={styles.title}>
           Придумай имя{'\n'}для персонажа
         </ThemedText>
@@ -70,6 +71,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.six,
   },
   title: {
+    marginTop: Spacing.two,
     marginBottom: Spacing.five,
   },
   input: {
