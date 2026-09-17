@@ -1,0 +1,4 @@
+project_id = "btarlycwkcyjaqvvvnvx"
+
+[functions.assemble-character]
+verify_jwt = true

@@ -8,9 +8,14 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
 // M-02 Онбординг — выбор критериев (§9.1, детализация в §9.1a).
-// Пул шаблонов — моковый, реальный подбор из template_assets придёт в Слое 2.
+// Критерии передаются в M-03, где Edge Function assemble-character
+// подбирает по ним шаблоны из template_assets (§13.2).
 const BODY_OPTIONS = ['Атлетичный', 'Плотный', 'Стройный', 'Нейтральный'];
 const STYLE_OPTIONS = ['Спортивный минимализм', 'Уличный', 'Классический зал'];
+
+function randomOf<T>(options: T[]): T {
+  return options[Math.floor(Math.random() * options.length)];
+}
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -20,7 +25,9 @@ export default function OnboardingScreen() {
   const canContinue = body !== null && style !== null;
 
   function goToAssembly() {
-    router.push('/character-assembly');
+    const bodyTag = (body ?? randomOf(BODY_OPTIONS)).toLowerCase();
+    const styleTag = (style ?? randomOf(STYLE_OPTIONS)).toLowerCase();
+    router.push({ pathname: '/character-assembly', params: { bodyTag, styleTag } });
   }
 
   return (
