@@ -166,6 +166,7 @@ Deno.serve(async (req) => {
     .eq('user_id', user.id)
     .maybeSingle()
 
+  let currentStreak = 1
   if (streakSelectError) {
     console.error(streakSelectError)
   } else {
@@ -188,6 +189,7 @@ Deno.serve(async (req) => {
       { onConflict: 'user_id' },
     )
     if (streakUpsertError) console.error(streakUpsertError)
+    currentStreak = nextCurrent
   }
 
   // 4. Apply XP to the character, handling level-ups. Skipped gracefully
@@ -200,6 +202,7 @@ Deno.serve(async (req) => {
     .maybeSingle()
 
   let updatedCharacter = null
+  let leveledUp = false
   if (characterSelectError) {
     console.error(characterSelectError)
   } else if (character) {
@@ -209,6 +212,7 @@ Deno.serve(async (req) => {
       xpCurrent -= xpToNext
       level += 1
       xpToNext = Math.round(xpToNext * LEVEL_UP_MULTIPLIER)
+      leveledUp = true
     }
 
     const { data: savedCharacter, error: characterUpdateError } = await supabase
@@ -222,6 +226,72 @@ Deno.serve(async (req) => {
       console.error(characterUpdateError)
     } else {
       updatedCharacter = savedCharacter
+    }
+  }
+
+  // Credit the wallet. workout_logs.currency_earned was only ever
+  // recorded per-row before this — nothing actually added it to the
+  // spendable users.currency_earned balance, which meant the Shop
+  // (M-10) could never have real coins to spend. +200 bonus on a
+  // level-up, matching M-06's copy.
+  const { data: wallet, error: walletSelectError } = await supabase
+    .from('users')
+    .select('currency_earned')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (walletSelectError) {
+    console.error(walletSelectError)
+  } else if (wallet) {
+    const gain = currencyEarned + (leveledUp ? 200 : 0)
+    const { error: walletUpdateError } = await supabase
+      .from('users')
+      .update({ currency_earned: wallet.currency_earned + gain })
+      .eq('id', user.id)
+    if (walletUpdateError) console.error(walletUpdateError)
+  }
+
+  // 5. Bump progress on the caller's active challenges (§10 user_challenges
+  // has no authenticated UPDATE policy — this is the Edge Function that
+  // owns it, same reasoning as streaks above). type_specific has no
+  // dedicated "target workout type" column in §10, so it's treated the
+  // same as workout_count here (best-effort, documented simplification).
+  const { data: activeChallenges, error: activeChallengesError } = await supabaseAdmin
+    .from('user_challenges')
+    .select('id, progress, challenges(type, target_value)')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+
+  if (activeChallengesError) {
+    console.error(activeChallengesError)
+  } else if (activeChallenges) {
+    for (const uc of activeChallenges) {
+      const challenge = uc.challenges as unknown as { type: string; target_value: number } | null
+      if (!challenge) continue
+
+      let nextProgress: number
+      if (challenge.type === 'streak') {
+        nextProgress = currentStreak
+      } else if (challenge.type === 'duration_total') {
+        nextProgress = uc.progress + (body.duration_minutes ?? 0)
+      } else {
+        // workout_count and type_specific (no target-type column in §10
+        // to filter by, so treated the same — any logged workout counts).
+        nextProgress = uc.progress + 1
+      }
+      nextProgress = Math.min(nextProgress, challenge.target_value)
+      if (nextProgress === uc.progress) continue
+
+      const completed = nextProgress >= challenge.target_value
+      const { error: progressError } = await supabaseAdmin
+        .from('user_challenges')
+        .update({
+          progress: nextProgress,
+          status: completed ? 'completed' : 'active',
+          completed_at: completed ? new Date().toISOString() : null,
+        })
+        .eq('id', uc.id)
+      if (progressError) console.error(progressError)
     }
   }
 

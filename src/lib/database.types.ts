@@ -29,6 +29,9 @@ export type UsersRow = {
   subscription_expires_at: string | null
   currency_earned: number
   currency_premium: number
+  push_enabled: boolean
+  reminder_enabled: boolean
+  is_private: boolean
 }
 
 export type CharactersRow = {

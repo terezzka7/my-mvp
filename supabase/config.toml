@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.on-workout-logged]
 verify_jwt = true
+
+[functions.buy-item]
+verify_jwt = true
