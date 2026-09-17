@@ -6,12 +6,15 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { useAuth } from '@/hooks/use-auth';
 
 // M-02 Онбординг — выбор критериев (§9.1, детализация в §9.1a).
 // Пол определяет базовый нейтральный силуэт тела (не комплекцию —
 // та будет меняться от прогресса в будущих версиях, не в этом MVP).
-// Критерии передаются в M-03, где Edge Function assemble-character
-// подбирает по ним шаблоны из template_assets (§13.2).
+// Критерии выбираются ДО регистрации (снижает трение на самом опасном
+// моменте CJM, см. 5.2/9.1a) — assemble-character требует JWT, поэтому
+// без сессии критерии передаются дальше на /signup и уходят в M-03
+// уже после входа.
 const GENDER_OPTIONS = ['Мужской', 'Женский'];
 const STYLE_OPTIONS = ['Классика', 'Ретро', 'Стрит', 'Футуризм'];
 
@@ -21,6 +24,7 @@ function randomOf<T>(options: T[]): T {
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [gender, setGender] = useState<string | null>(null);
   const [style, setStyle] = useState<string | null>(null);
 
@@ -29,7 +33,12 @@ export default function OnboardingScreen() {
   function goToAssembly() {
     const bodyTag = (gender ?? randomOf(GENDER_OPTIONS)).toLowerCase();
     const styleTag = (style ?? randomOf(STYLE_OPTIONS)).toLowerCase();
-    router.push({ pathname: '/character-assembly', params: { bodyTag, styleTag } });
+
+    if (user) {
+      router.push({ pathname: '/character-assembly', params: { bodyTag, styleTag } });
+    } else {
+      router.push({ pathname: '/signup', params: { bodyTag, styleTag } });
+    }
   }
 
   return (

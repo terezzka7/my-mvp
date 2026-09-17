@@ -22,7 +22,7 @@ export default function IntroScreen() {
         </ThemedText>
       </View>
 
-      <Button label="Собрать персонажа" onPress={() => router.push('/signup')} />
+      <Button label="Собрать персонажа" onPress={() => router.push('/onboarding')} />
     </View>
   );
 }

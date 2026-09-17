@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 // упрощение, что и на web (§11.3 Apple ID/Google — отдельный шаг).
 export default function LoginScreen() {
   const router = useRouter();
+  const { bodyTag, styleTag } = useLocalSearchParams<{ bodyTag?: string; styleTag?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -26,16 +27,31 @@ export default function LoginScreen() {
     }
 
     setSubmitting(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
 
-    if (signInError) {
+    if (signInError || !data.user) {
       console.error(signInError);
       setError('Не удалось войти. Проверьте email и пароль.');
       return;
     }
 
-    router.replace('/onboarding');
+    if (bodyTag && styleTag) {
+      router.replace({ pathname: '/character-assembly', params: { bodyTag, styleTag } });
+      return;
+    }
+
+    const { data: character, error: characterError } = await supabase
+      .from('characters')
+      .select('id')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+
+    if (characterError) {
+      console.error(characterError);
+    }
+
+    router.replace(character ? '/home' : '/onboarding');
   }
 
   return (

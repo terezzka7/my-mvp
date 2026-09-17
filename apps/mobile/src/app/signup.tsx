@@ -1,4 +1,4 @@
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
 
@@ -10,6 +10,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { bodyTag, styleTag } = useLocalSearchParams<{ bodyTag?: string; styleTag?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -49,7 +50,11 @@ export default function SignupScreen() {
     }
 
     if (data.session) {
-      router.replace('/onboarding');
+      if (bodyTag && styleTag) {
+        router.replace({ pathname: '/character-assembly', params: { bodyTag, styleTag } });
+      } else {
+        router.replace('/onboarding');
+      }
       return;
     }
 
@@ -105,7 +110,10 @@ export default function SignupScreen() {
         disabled={submitting}
       />
 
-      <Link href="/login" style={styles.link}>
+      <Link
+        href={bodyTag && styleTag ? { pathname: '/login', params: { bodyTag, styleTag } } : '/login'}
+        style={styles.link}
+      >
         <ThemedText type="bodyMuted">Уже есть аккаунт? Войти</ThemedText>
       </Link>
     </ThemedView>
