@@ -23,6 +23,13 @@ const DEMO_IMAGES: Record<string, ImageSourcePropType> = {
   мужской: require('@/assets/demo/male-hero.png'),
 };
 
+// Верхний цвет градиента тоже завязан на пол — женский экран #7300FF,
+// мужской #3700FF, оба гаснут в Colors.bg к 100%.
+const GRADIENT_TOP_BY_GENDER: Record<string, string> = {
+  женский: '#7300FF',
+  мужской: '#3700FF',
+};
+
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -71,7 +78,11 @@ export default function CharacterAssemblyScreen() {
   }
 
   return (
-    <LinearGradient colors={['#7300FF', Colors.bg]} locations={[0.25, 1]} style={styles.container}>
+    <LinearGradient
+      colors={[GRADIENT_TOP_BY_GENDER[bodyTag] ?? GRADIENT_TOP_BY_GENDER.женский, Colors.bg]}
+      locations={[0.25, 1]}
+      style={styles.container}
+    >
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="display">{name || 'Твой герой'}</ThemedText>
 
