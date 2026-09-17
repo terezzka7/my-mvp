@@ -726,6 +726,9 @@ Email → Universal Link → M-04 или W-04
 | subscription_expires_at | timestamptz | Дата истечения | Нет |
 | currency_earned | integer | Баланс зарабатываемой валюты | Да |
 | currency_premium | integer | Баланс премиум-валюты | Да |
+| push_enabled | boolean | Тумблер M-15 "Push-уведомления о челленджах" (добавлено поверх исходной схемы — см. supabase/add_settings_columns.sql; не подключено к реальной push-инфраструктуре, вне MVP) | Да |
+| reminder_enabled | boolean | Тумблер M-15 "Напоминание залогировать тренировку" (та же оговорка) | Да |
+| is_private | boolean | Тумблер M-15 "Скрыть публичный профиль" | Да |
 
 ### Таблица: characters (1:1 → users)
 
@@ -994,8 +997,9 @@ og:image для превью
 **Общее (бэкенд / БД / auth):**
 - [x] Supabase Auth (единый аккаунт)
 - [x] Таблицы: users, characters, workout_logs, streaks
-- [x] Edge Function: on-workout-logged (XP + стрик)
+- [x] Edge Function: on-workout-logged (XP + стрик + прогресс активных челленджей + зачисление currency_earned на баланс)
 - [x] Edge Function: assemble-character (подбор шаблонов по критериям → Storage)
+- [x] Edge Function: buy-item (M-10a покупка — user_items/списание монет, service_role, т.к. RLS не даёт клиенту писать user_items)
 - [x] Universal Links web → mobile
 
 ### 13.3 Should Have

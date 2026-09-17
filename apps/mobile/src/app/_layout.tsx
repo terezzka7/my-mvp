@@ -60,8 +60,17 @@ export default function RootLayout() {
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="character-name" />
         <Stack.Screen name="character-assembly" />
-        <Stack.Screen name="home" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="challenge-detail" />
+        <Stack.Screen name="shop-detail" />
+        <Stack.Screen name="customize" />
+        <Stack.Screen name="history" />
+        <Stack.Screen name="workout-detail" />
+        <Stack.Screen name="settings" />
         <Stack.Screen name="log-workout" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="level-up" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="share" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );
