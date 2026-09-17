@@ -8,8 +8,12 @@ import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 
-// M-01 Сплэш (§9.1): нет сессии → /login; есть сессия, но нет
+// M-01 Сплэш (§9.1): нет сессии → M-01b /intro; есть сессия, но нет
 // персонажа → /onboarding (M-02); есть и то и другое → /home (M-04).
+// Держим кислотный экран минимум 2с (бренд-момент), даже если сессия
+// резолвится быстрее.
+const MIN_SPLASH_MS = 2000;
+
 export default function SplashScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -18,18 +22,19 @@ export default function SplashScreen() {
     if (loading) return;
 
     let active = true;
+    const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_SPLASH_MS));
 
     async function decideRoute() {
       if (!user) {
-        router.replace('/login');
+        await minDelay;
+        if (active) router.replace('/intro');
         return;
       }
 
-      const { data: character, error } = await supabase
-        .from('characters')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      const [{ data: character, error }] = await Promise.all([
+        supabase.from('characters').select('id').eq('user_id', user.id).maybeSingle(),
+        minDelay,
+      ]);
 
       if (!active) return;
 
