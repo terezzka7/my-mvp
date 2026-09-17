@@ -1,10 +1,10 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Image, ScrollView, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { assembleCharacter } from '@/lib/finish-onboarding';
@@ -21,13 +21,6 @@ import { assembleCharacter } from '@/lib/finish-onboarding';
 const DEMO_IMAGES: Record<string, ImageSourcePropType> = {
   женский: require('@/assets/demo/female-hero.png'),
   мужской: require('@/assets/demo/male-hero.png'),
-};
-
-// Верхний цвет градиента тоже завязан на пол — женский экран #7300FF,
-// мужской #3700FF, оба гаснут в Colors.bg к 100%.
-const GRADIENT_TOP_BY_GENDER: Record<string, string> = {
-  женский: '#7300FF',
-  мужской: '#3700FF',
 };
 
 function capitalize(value: string) {
@@ -67,11 +60,7 @@ export default function CharacterAssemblyScreen() {
   }
 
   return (
-    <LinearGradient
-      colors={[GRADIENT_TOP_BY_GENDER[bodyTag] ?? GRADIENT_TOP_BY_GENDER.женский, Colors.bg]}
-      locations={[0.25, 1]}
-      style={styles.container}
-    >
+    <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <ThemedText type="display">{name || 'Твой герой'}</ThemedText>
 
@@ -115,7 +104,7 @@ export default function CharacterAssemblyScreen() {
           disabled={assembling}
         />
       </View>
-    </LinearGradient>
+    </ThemedView>
   );
 }
 
