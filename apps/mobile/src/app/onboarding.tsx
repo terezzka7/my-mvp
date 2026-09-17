@@ -8,10 +8,12 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 
 // M-02 Онбординг — выбор критериев (§9.1, детализация в §9.1a).
+// Пол определяет базовый нейтральный силуэт тела (не комплекцию —
+// та будет меняться от прогресса в будущих версиях, не в этом MVP).
 // Критерии передаются в M-03, где Edge Function assemble-character
 // подбирает по ним шаблоны из template_assets (§13.2).
-const BODY_OPTIONS = ['Атлетичный', 'Плотный', 'Стройный', 'Нейтральный'];
-const STYLE_OPTIONS = ['Спортивный минимализм', 'Уличный', 'Классический зал'];
+const GENDER_OPTIONS = ['Мужской', 'Женский'];
+const STYLE_OPTIONS = ['Классика', 'Ретро', 'Стрит', 'Футуризм'];
 
 function randomOf<T>(options: T[]): T {
   return options[Math.floor(Math.random() * options.length)];
@@ -19,13 +21,13 @@ function randomOf<T>(options: T[]): T {
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const [body, setBody] = useState<string | null>(null);
+  const [gender, setGender] = useState<string | null>(null);
   const [style, setStyle] = useState<string | null>(null);
 
-  const canContinue = body !== null && style !== null;
+  const canContinue = gender !== null && style !== null;
 
   function goToAssembly() {
-    const bodyTag = (body ?? randomOf(BODY_OPTIONS)).toLowerCase();
+    const bodyTag = (gender ?? randomOf(GENDER_OPTIONS)).toLowerCase();
     const styleTag = (style ?? randomOf(STYLE_OPTIONS)).toLowerCase();
     router.push({ pathname: '/character-assembly', params: { bodyTag, styleTag } });
   }
@@ -39,21 +41,21 @@ export default function OnboardingScreen() {
         </ThemedText>
 
         <ThemedText type="title" style={styles.sectionLabel}>
-          Телосложение
+          Пол
         </ThemedText>
         <View style={styles.optionsGrid}>
-          {BODY_OPTIONS.map((option) => (
+          {GENDER_OPTIONS.map((option) => (
             <Chip
               key={option}
               label={option}
-              selected={body === option}
-              onPress={() => setBody(option)}
+              selected={gender === option}
+              onPress={() => setGender(option)}
             />
           ))}
         </View>
 
         <ThemedText type="title" style={styles.sectionLabel}>
-          Стиль/архетип
+          Стиль
         </ThemedText>
         <View style={styles.optionsGrid}>
           {STYLE_OPTIONS.map((option) => (
