@@ -6,6 +6,7 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { assembleCharacter } from '@/lib/finish-onboarding';
 import { supabase } from '@/lib/supabase';
 
 export default function SignupScreen() {
@@ -45,27 +46,38 @@ export default function SignupScreen() {
       password,
       options: { data: { platform_origin: 'ios' } },
     });
-    setSubmitting(false);
 
     if (signUpError) {
+      setSubmitting(false);
       console.error(signUpError);
       setError('Не удалось зарегистрироваться. Попробуйте ещё раз.');
       return;
     }
 
-    if (data.session) {
-      if (bodyTag && styleTag) {
-        router.replace({
-          pathname: '/character-assembly',
-          params: { bodyTag, styleTag, name: characterName ?? '' },
-        });
-      } else {
-        router.replace('/onboarding');
-      }
+    if (!data.session) {
+      setSubmitting(false);
+      setCheckEmailMessage('Проверьте почту и подтвердите регистрацию, затем войдите.');
       return;
     }
 
-    setCheckEmailMessage('Проверьте почту и подтвердите регистрацию, затем войдите.');
+    if (bodyTag && styleTag) {
+      const { error: assembleError } = await assembleCharacter({
+        bodyTag,
+        styleTag,
+        name: characterName,
+        userId: data.session.user.id,
+      });
+      setSubmitting(false);
+      if (assembleError) {
+        setError(assembleError);
+        return;
+      }
+      router.replace('/home');
+      return;
+    }
+
+    setSubmitting(false);
+    router.replace('/onboarding');
   }
 
   return (

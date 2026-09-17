@@ -6,29 +6,24 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Fonts, Spacing } from '@/constants/theme';
-import { useAuth } from '@/hooks/use-auth';
 
 // M-02b Имя персонажа — идёт сразу после выбора критериев (M-02),
 // тоже до регистрации: и критерии, и имя — вложение пользователя,
 // которое должно случиться до "платы" в виде email/пароля (5.2/9.1a).
-// Имя не уходит в assemble-character напрямую (там оно не нужно) —
-// character-assembly обновит characters.name отдельным клиентским
-// UPDATE после сборки, когда сессия уже точно есть.
+// Дальше всегда M-03 (превью с демо-картинкой, входа не требует) —
+// регистрация идёт уже после него.
 export default function CharacterNameScreen() {
   const router = useRouter();
-  const { user } = useAuth();
   const { bodyTag, styleTag } = useLocalSearchParams<{ bodyTag: string; styleTag: string }>();
   const [name, setName] = useState('');
 
   const canContinue = name.trim().length > 0;
 
   function handleDone() {
-    const params = { bodyTag, styleTag, name: name.trim() };
-    if (user) {
-      router.push({ pathname: '/character-assembly', params });
-    } else {
-      router.push({ pathname: '/signup', params });
-    }
+    router.push({
+      pathname: '/character-assembly',
+      params: { bodyTag, styleTag, name: name.trim() },
+    });
   }
 
   return (

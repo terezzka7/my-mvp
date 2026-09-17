@@ -6,6 +6,7 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
+import { assembleCharacter } from '@/lib/finish-onboarding';
 import { supabase } from '@/lib/supabase';
 
 // M-1 Регистрация/авторизация (§13.2). Не отдельный ряд в §9.1 —
@@ -32,19 +33,27 @@ export default function LoginScreen() {
 
     setSubmitting(true);
     const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
 
     if (signInError || !data.user) {
+      setSubmitting(false);
       console.error(signInError);
       setError('Не удалось войти. Проверьте email и пароль.');
       return;
     }
 
     if (bodyTag && styleTag) {
-      router.replace({
-        pathname: '/character-assembly',
-        params: { bodyTag, styleTag, name: characterName ?? '' },
+      const { error: assembleError } = await assembleCharacter({
+        bodyTag,
+        styleTag,
+        name: characterName,
+        userId: data.user.id,
       });
+      setSubmitting(false);
+      if (assembleError) {
+        setError(assembleError);
+        return;
+      }
+      router.replace('/home');
       return;
     }
 
@@ -53,6 +62,8 @@ export default function LoginScreen() {
       .select('id')
       .eq('user_id', data.user.id)
       .maybeSingle();
+
+    setSubmitting(false);
 
     if (characterError) {
       console.error(characterError);

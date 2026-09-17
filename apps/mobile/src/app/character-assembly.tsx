@@ -1,20 +1,32 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Animated, Image, ScrollView, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
-import { supabase } from '@/lib/supabase';
+import { assembleCharacter } from '@/lib/finish-onboarding';
 
-// M-03 Сборка персонажа (§9.1, §9.1a). "Это я" вызывает Edge Function
-// assemble-character (§7.1/§11.1/§13.2), которая подбирает шаблоны по
-// критериям, компонует изображение и сохраняет строку в characters.
-// Имя (введено на M-02b, до входа) в саму функцию не передаётся — она
-// его не знает, поэтому пишем его отдельным UPDATE своей же строки
-// сразу после сборки (RLS разрешает владельцу обновлять characters).
+// M-03 Сборка персонажа (§9.1, §9.1a) — превью до входа: показывает
+// демо-картинку по полу (не результат реального compositing —
+// assemble-character требует JWT, которого тут ещё нет). Реальная
+// сборка + запись имени происходят молча сразу после регистрации/входа
+// (см. signup.tsx/login.tsx), а если сессия уже есть (например, второй
+// проход через "Пересобрать"), "Это я" делает это прямо здесь.
+//
+// DEMO_IMAGES — временные заглушки для демо, пока нет финального арта
+// на все пол×стиль комбинации (см. апдейт book §12 про это исключение).
+const DEMO_IMAGES: Record<string, ImageSourcePropType> = {
+  женский: require('@/assets/demo/female-hero.png'),
+  мужской: require('@/assets/demo/male-hero.png'),
+};
+
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export default function CharacterAssemblyScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -23,57 +35,82 @@ export default function CharacterAssemblyScreen() {
     styleTag: string;
     name?: string;
   }>();
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [assembling, setAssembling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const reveal = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(reveal, {
+      toValue: 1,
+      friction: 5,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  }, [reveal]);
+
   async function handleConfirm() {
-    setAssembling(true);
-    setError(null);
-
-    const { data, error: invokeError } = await supabase.functions.invoke('assemble-character', {
-      body: { bodyTag, styleTag },
-    });
-
-    if (invokeError || !data?.character) {
-      setAssembling(false);
-      console.error(invokeError);
-      setError('Не удалось собрать персонажа. Попробуйте ещё раз.');
+    if (!user) {
+      router.push({ pathname: '/signup', params: { bodyTag, styleTag, name: name ?? '' } });
       return;
     }
 
-    if (name && user) {
-      const { error: nameError } = await supabase
-        .from('characters')
-        .update({ name })
-        .eq('user_id', user.id);
-      if (nameError) {
-        console.error(nameError);
-      }
-    }
+    setAssembling(true);
+    setError(null);
+
+    const { error: assembleError } = await assembleCharacter({ bodyTag, styleTag, name, userId: user.id });
 
     setAssembling(false);
-    setPreviewUrl(data.character.image_url);
+
+    if (assembleError) {
+      setError(assembleError);
+      return;
+    }
+
     router.replace('/home');
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <View style={styles.preview}>
-        {previewUrl ? (
-          <Image source={{ uri: previewUrl }} style={styles.previewImage} />
-        ) : (
-          <ThemedText type="overline">Предпросмотр</ThemedText>
-        )}
-      </View>
+    <LinearGradient colors={['#7300FF', Colors.bg]} locations={[0.25, 1]} style={styles.container}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <ThemedText type="display">{name || 'Твой герой'}</ThemedText>
 
-      <ThemedText type="title" style={styles.caption}>
-        Твой герой готов
-      </ThemedText>
+        <View style={styles.chipsRow}>
+          <View style={styles.chip}>
+            <ThemedText type="body">{capitalize(bodyTag)}</ThemedText>
+          </View>
+          <View style={styles.chip}>
+            <ThemedText type="body">{capitalize(styleTag)}</ThemedText>
+          </View>
+        </View>
+        <View style={styles.chipsRow}>
+          <View style={[styles.chip, styles.levelChip]}>
+            <ThemedText type="body" style={styles.levelChipText}>
+              Ур. 1
+            </ThemedText>
+          </View>
+        </View>
 
-      {error && <ThemedText style={styles.error}>{error}</ThemedText>}
+        <Animated.View
+          style={[
+            styles.imageWrap,
+            {
+              opacity: reveal,
+              transform: [{ scale: reveal.interpolate({ inputRange: [0, 1], outputRange: [0.85, 1] }) }],
+            },
+          ]}
+        >
+          <Image source={DEMO_IMAGES[bodyTag]} style={styles.image} resizeMode="contain" />
+        </Animated.View>
+      </ScrollView>
 
-      <View style={styles.actions}>
+      <View style={styles.footer}>
+        <ThemedText type="bodyMuted" style={styles.hint}>
+          Внешний вид будет меняться вместе с прогрессом.
+        </ThemedText>
+
+        {error && <ThemedText style={styles.error}>{error}</ThemedText>}
+
         <Button
           label={assembling ? 'Собираем...' : 'Это я'}
           onPress={handleConfirm}
@@ -86,49 +123,54 @@ export default function CharacterAssemblyScreen() {
           disabled={assembling}
         />
       </View>
-
-      <ThemedText type="bodyMuted" style={styles.hint}>
-        Внешний вид будет меняться вместе с прогрессом
-      </ThemedText>
-    </ThemedView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'space-between',
+  },
+  content: {
     padding: Spacing.four,
-    justifyContent: 'center',
+    paddingTop: Spacing.six,
   },
-  preview: {
-    height: 320,
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  previewImage: {
-    width: '100%',
-    height: '100%',
-  },
-  caption: {
-    textAlign: 'center',
-    marginTop: Spacing.four,
-    marginBottom: Spacing.four,
-  },
-  actions: {
+  chipsRow: {
+    flexDirection: 'row',
     gap: Spacing.two,
+    marginTop: Spacing.three,
+  },
+  chip: {
+    backgroundColor: '#141414',
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+  },
+  levelChip: {
+    backgroundColor: Colors.accent,
+  },
+  levelChipText: {
+    color: Colors.accentText,
+    fontWeight: '600',
+  },
+  imageWrap: {
+    alignItems: 'center',
+    marginTop: Spacing.five,
+  },
+  image: {
+    width: 260,
+    height: 380,
+  },
+  footer: {
+    padding: Spacing.four,
+    gap: Spacing.three,
   },
   hint: {
     textAlign: 'center',
-    marginTop: Spacing.three,
   },
   error: {
     color: '#ff6b6b',
     textAlign: 'center',
-    marginBottom: Spacing.two,
   },
 });
