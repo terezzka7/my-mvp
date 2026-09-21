@@ -9,13 +9,14 @@ export interface PublicProfileSummary {
 
 interface CardGridProps {
   profiles: PublicProfileSummary[]
+  emptyMessage?: string
 }
 
-export function CardGrid({ profiles }: CardGridProps) {
+export function CardGrid({ profiles, emptyMessage = 'Пока нет публичных профилей' }: CardGridProps) {
   if (profiles.length === 0) {
     return (
       <div className="mx-auto max-w-6xl px-6 pb-20">
-        <p className="py-16 text-center text-white/40">Пока нет публичных профилей</p>
+        <p className="py-16 text-center text-white/40">{emptyMessage}</p>
       </div>
     )
   }
