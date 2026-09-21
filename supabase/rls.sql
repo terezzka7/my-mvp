@@ -23,7 +23,8 @@ select
   c.xp_current,
   c.image_url
 from users u
-join characters c on c.user_id = u.id;
+join characters c on c.user_id = u.id
+where u.is_private = false; -- requires supabase/add_settings_columns.sql to have run first
 
 grant select on public_profiles to anon, authenticated;
 
