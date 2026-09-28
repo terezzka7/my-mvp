@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { supabase } from '../lib/supabase'
 
 export function Settings() {
-  const navigate = useNavigate()
   const [userId, setUserId] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -101,8 +99,9 @@ export function Settings() {
       return
     }
 
+    // RequireAuth redirects to /login itself the moment signOut clears the
+    // session — no explicit navigate needed here.
     await supabase.auth.signOut()
-    navigate('/')
   }
 
   return (
