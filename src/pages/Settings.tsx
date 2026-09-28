@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { supabase } from '../lib/supabase'
 
 export function Settings() {
+  const navigate = useNavigate()
   const [userId, setUserId] = useState<string | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
@@ -11,6 +13,9 @@ export function Settings() {
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
@@ -83,6 +88,23 @@ export function Settings() {
     setSaving(false)
   }
 
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    setDeleteError(null)
+
+    const { error: invokeError } = await supabase.functions.invoke('delete-account')
+
+    if (invokeError) {
+      console.error(invokeError)
+      setDeleteError('Не удалось удалить аккаунт. Попробуйте ещё раз.')
+      setDeleting(false)
+      return
+    }
+
+    await supabase.auth.signOut()
+    navigate('/')
+  }
+
   return (
     <div className="min-h-screen bg-bg text-text">
       <Header />
@@ -131,6 +153,48 @@ export function Settings() {
             </button>
             {saveMessage && <p className="text-sm text-white/70">{saveMessage}</p>}
           </form>
+        )}
+
+        {!loading && !error && (
+          <div className="mt-12 rounded-lg border border-red-500/30 p-4">
+            <h2 className="font-semibold text-red-400">Удалить аккаунт</h2>
+            <p className="mt-1 text-sm text-white/50">
+              Удаляются персонаж, тренировки, статистика и сам аккаунт без возможности восстановления.
+            </p>
+
+            {!confirmingDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                className="mt-4 rounded-full border border-red-500/50 px-6 py-3 font-semibold text-red-400 hover:bg-red-500/10"
+              >
+                Удалить аккаунт
+              </button>
+            ) : (
+              <div className="mt-4 flex flex-col gap-3">
+                <p className="font-semibold text-red-400">Вы уверены? Действие необратимо.</p>
+                {deleteError && <p className="text-sm text-red-400">{deleteError}</p>}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    disabled={deleting}
+                    className="rounded-full bg-red-500 px-6 py-3 font-semibold text-white disabled:opacity-50"
+                  >
+                    {deleting ? 'Удаление...' : 'Да, удалить'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmingDelete(false)}
+                    disabled={deleting}
+                    className="rounded-full border border-white/10 px-6 py-3 font-semibold text-white/70 disabled:opacity-50"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

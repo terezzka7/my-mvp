@@ -989,6 +989,7 @@ og:image для превью
 - [x] Таблицы: users, characters, workout_logs, streaks
 - [x] Edge Function: on-workout-logged (XP + стрик)
 - [x] Edge Function: assemble-character (подбор шаблонов по критериям → Storage)
+- [x] Edge Function: delete-account ("Удалить аккаунт" — веб W-08 и mobile M-15. Каскадно чистит share_cards/user_items/user_challenges/workout_logs/streaks/characters/users, обнуляет чужие users.referred_by, затем удаляет auth.users через Admin API. service_role, т.к. RLS запрещает клиенту DELETE почти на всех этих таблицах)
 - [x] Universal Links web → mobile
 
 ### 13.3 Should Have
