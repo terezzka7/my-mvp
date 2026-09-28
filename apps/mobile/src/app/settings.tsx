@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -35,6 +35,7 @@ export default function SettingsScreen() {
     is_private: false,
   });
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -79,6 +80,28 @@ export default function SettingsScreen() {
   async function handleLogout() {
     await supabase.auth.signOut();
     router.replace('/login');
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    const { error } = await supabase.functions.invoke('delete-account');
+    setDeleting(false);
+
+    if (error) {
+      console.error(error);
+      Alert.alert('Не удалось удалить аккаунт', 'Попробуйте ещё раз.');
+      return;
+    }
+
+    await supabase.auth.signOut();
+    router.replace('/login');
+  }
+
+  function confirmDeleteAccount() {
+    Alert.alert('Вы уверены?', 'Действие необратимо. Персонаж, тренировки и статистика будут удалены навсегда.', [
+      { text: 'Отмена', style: 'cancel' },
+      { text: 'Да, удалить', style: 'destructive', onPress: handleDeleteAccount },
+    ]);
   }
 
   return (
@@ -130,6 +153,21 @@ export default function SettingsScreen() {
               Выйти
             </ThemedText>
           </Pressable>
+        </View>
+
+        <View style={styles.dangerGroup}>
+          <Pressable
+            style={styles.dangerRow}
+            onPress={confirmDeleteAccount}
+            disabled={deleting}
+          >
+            <ThemedText type="body" style={styles.dangerLabel}>
+              {deleting ? 'Удаляем...' : 'Удалить аккаунт'}
+            </ThemedText>
+          </Pressable>
+          <ThemedText type="bodyMuted" style={styles.dangerHint}>
+            Персонаж, тренировки и статистика удаляются без возможности восстановления.
+          </ThemedText>
         </View>
       </ScrollView>
     </ThemedView>
@@ -206,5 +244,22 @@ const styles = StyleSheet.create({
   },
   logout: {
     color: '#ff6b6b',
+  },
+  dangerGroup: {
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: 'rgba(255,107,107,.35)',
+    padding: Spacing.three,
+    gap: Spacing.two,
+  },
+  dangerRow: {
+    alignItems: 'center',
+  },
+  dangerLabel: {
+    color: '#ff6b6b',
+    fontWeight: '600',
+  },
+  dangerHint: {
+    textAlign: 'center',
   },
 });

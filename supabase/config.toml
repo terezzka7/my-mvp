@@ -8,3 +8,6 @@ verify_jwt = true
 
 [functions.buy-item]
 verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true

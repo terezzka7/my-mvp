@@ -1000,6 +1000,7 @@ og:image для превью
 - [x] Edge Function: on-workout-logged (XP + стрик + прогресс активных челленджей + зачисление currency_earned на баланс)
 - [x] Edge Function: assemble-character (подбор шаблонов по критериям → Storage)
 - [x] Edge Function: buy-item (M-10a покупка — user_items/списание монет, service_role, т.к. RLS не даёт клиенту писать user_items)
+- [x] Edge Function: delete-account ("Удалить аккаунт" — веб W-08 и mobile M-15. Каскадно чистит share_cards/user_items/user_challenges/workout_logs/streaks/characters/users, обнуляет чужие users.referred_by, затем удаляет auth.users через Admin API. service_role, т.к. RLS запрещает клиенту DELETE почти на всех этих таблицах)
 - [x] Universal Links web → mobile
 
 ### 13.3 Should Have
