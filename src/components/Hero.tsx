@@ -10,13 +10,13 @@ export function Hero() {
         src={heroLeft}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute left-0 top-32 z-0 hidden w-72 -translate-x-1/3 rotate-6 select-none lg:block"
+        className="pointer-events-none absolute left-0 top-32 z-0 hidden w-96 -translate-x-1/3 rotate-6 select-none lg:block"
       />
       <img
         src={heroRight}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute right-0 top-2 z-0 hidden w-72 translate-x-1/3 -rotate-6 select-none lg:block"
+        className="pointer-events-none absolute right-0 top-2 z-0 hidden w-96 translate-x-1/3 -rotate-6 select-none lg:block"
       />
 
       <div className="relative z-10">
