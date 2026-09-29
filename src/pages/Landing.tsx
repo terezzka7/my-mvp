@@ -76,15 +76,17 @@ export function Landing() {
     <div className="min-h-screen bg-bg text-text">
       <Header />
       <Hero />
-      <SearchBar value={search} onChange={setSearch} />
-      {loading && <p className="py-16 text-center text-white/40">Загрузка...</p>}
-      {error && <p className="py-16 text-center text-red-400">{error}</p>}
-      {!loading && !error && (
-        <CardGrid
-          profiles={profiles ?? []}
-          emptyMessage={search.trim() ? 'Ничего не найдено' : undefined}
-        />
-      )}
+      <div className="relative z-10 bg-bg">
+        <SearchBar value={search} onChange={setSearch} />
+        {loading && <p className="py-16 text-center text-white/40">Загрузка...</p>}
+        {error && <p className="py-16 text-center text-red-400">{error}</p>}
+        {!loading && !error && (
+          <CardGrid
+            profiles={profiles ?? []}
+            emptyMessage={search.trim() ? 'Ничего не найдено' : undefined}
+          />
+        )}
+      </div>
     </div>
   )
 }

@@ -10,6 +10,17 @@
   --font-body: 'Inter', -apple-system, 'SF Pro Text', sans-serif;
 }
 
+html,
+body {
+  /* Hero's side character images intentionally hang half off the left/
+     right edges (see Hero.tsx) — clip at the page level, not on the
+     section itself, since overflow-x without overflow-y forces the
+     other axis to `auto` per the CSS overflow spec and would truncate
+     the images vertically too. Needs to be on both html and body: the
+     root scroller is html, and body-only hidden doesn't stop it. */
+  overflow-x: hidden;
+}
+
 body {
   margin: 0;
   background: var(--color-bg);
