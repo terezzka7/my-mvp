@@ -70,6 +70,14 @@ export function Hero() {
               statsLine="42 тренировки · серия 12 дней"
               onClose={() => setShowExample(false)}
             />
+            <a
+              href="https://apps.apple.com/ru/iphone/search"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 block rounded-full bg-accent px-6 py-3 text-center font-semibold text-black"
+            >
+              Собрать своего героя
+            </a>
           </div>
         </div>
       )}
