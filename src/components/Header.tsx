@@ -57,7 +57,7 @@ export function Header() {
           </button>
         ) : (
           <a
-            href="https://www.apple.com/app-store/"
+            href="https://apps.apple.com/ru/iphone/search"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-black"

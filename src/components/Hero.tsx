@@ -27,7 +27,7 @@ export function Hero() {
         </p>
         <div className="mt-8 flex items-center justify-center gap-4">
           <a
-            href="https://www.apple.com/app-store/"
+            href="https://apps.apple.com/ru/iphone/search"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-full bg-accent px-6 py-3 font-semibold text-black"
