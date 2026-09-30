@@ -27,7 +27,9 @@ export function Hero() {
         </p>
         <div className="mt-8 flex items-center justify-center gap-4">
           <a
-            href="#"
+            href="https://www.apple.com/app-store/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="rounded-full bg-accent px-6 py-3 font-semibold text-black"
           >
             Скачать в App Store

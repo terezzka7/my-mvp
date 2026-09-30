@@ -57,7 +57,9 @@ export function Header() {
           </button>
         ) : (
           <a
-            href="#"
+            href="https://www.apple.com/app-store/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-black"
           >
             Скачать
