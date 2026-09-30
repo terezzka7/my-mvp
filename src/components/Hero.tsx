@@ -62,20 +62,13 @@ export function Hero() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-6"
           onClick={() => setShowExample(false)}
         >
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setShowExample(false)}
-              aria-label="Закрыть"
-              className="absolute -top-10 right-0 text-2xl text-white/60 hover:text-white"
-            >
-              ✕
-            </button>
+          <div onClick={(e) => e.stopPropagation()}>
             <ShareCard
               heroName="Камила"
               level={8}
               imageUrl={demoCharacter}
               statsLine="42 тренировки · серия 12 дней"
+              onClose={() => setShowExample(false)}
             />
           </div>
         </div>
