@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 import heroLeft from '../assets/hero-left.png'
 import heroRight from '../assets/hero-right.png'
 import demoCharacter from '../assets/demo-character.png'
+import terezaCharacter from '../assets/tereza.png'
 import { ShareCard } from './ShareCard'
 
 const DEMO_SHARE_DATA = {
@@ -45,7 +46,9 @@ export function Hero() {
       setOwnData({
         heroName: character.name,
         level: character.level,
-        imageUrl: character.image_url,
+        // TODO: character.image_url once real Storage-rendered characters
+        // exist — placeholder photo for now per founder's request.
+        imageUrl: terezaCharacter,
         statsLine: `${workouts ?? 0} тренировок · серия ${streak?.current_streak ?? 0} дней`,
       })
     }
