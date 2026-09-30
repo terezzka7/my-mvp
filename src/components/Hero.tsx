@@ -1,9 +1,22 @@
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import { APP_NAME } from '../lib/constants'
 import heroLeft from '../assets/hero-left.png'
 import heroRight from '../assets/hero-right.png'
+import demoCharacter from '../assets/demo-character.png'
+import { ShareCard } from './ShareCard'
 
 export function Hero() {
+  const [showExample, setShowExample] = useState(false)
+
+  useEffect(() => {
+    if (!showExample) return
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setShowExample(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [showExample])
+
   return (
     <section className="relative border-b border-white/10 px-6 py-20 text-center">
       <img
@@ -34,14 +47,39 @@ export function Hero() {
           >
             Скачать в App Store
           </a>
-          <Link
-            to="/u/alex_hero"
+          <button
+            type="button"
+            onClick={() => setShowExample(true)}
             className="rounded-full border border-white/20 px-6 py-3 font-semibold text-text hover:border-accent"
           >
             Смотреть пример
-          </Link>
+          </button>
         </div>
       </div>
+
+      {showExample && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-6"
+          onClick={() => setShowExample(false)}
+        >
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              onClick={() => setShowExample(false)}
+              aria-label="Закрыть"
+              className="absolute -top-10 right-0 text-2xl text-white/60 hover:text-white"
+            >
+              ✕
+            </button>
+            <ShareCard
+              heroName="Камила"
+              level={8}
+              imageUrl={demoCharacter}
+              statsLine="42 тренировки · серия 12 дней"
+            />
+          </div>
+        </div>
+      )}
     </section>
   )
 }
