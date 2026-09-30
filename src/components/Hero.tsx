@@ -62,7 +62,7 @@ export function Hero() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-6"
           onClick={() => setShowExample(false)}
         >
-          <div className="w-full max-w-[428px]" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full max-w-[418px]" onClick={(e) => e.stopPropagation()}>
             <ShareCard
               heroName="Камила"
               level={8}
