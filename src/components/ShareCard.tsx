@@ -20,7 +20,7 @@ export function ShareCard({ heroName, level, imageUrl, statsLine, frameColor, on
           type="button"
           onClick={onClose}
           aria-label="Закрыть"
-          className="absolute right-4 top-4 z-10 text-lg text-white/60 hover:text-white"
+          className="absolute right-[26px] top-4 z-10 text-lg text-white/60 hover:text-white"
         >
           ✕
         </button>
