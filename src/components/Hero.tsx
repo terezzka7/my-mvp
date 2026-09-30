@@ -16,7 +16,7 @@ export function Hero() {
         src={heroRight}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute right-[50px] top-28 z-0 hidden w-[32rem] translate-x-1/4 rotate-[-28deg] select-none lg:block"
+        className="pointer-events-none absolute right-[40px] top-28 z-0 hidden w-[32rem] translate-x-1/4 rotate-[-28deg] select-none lg:block"
       />
 
       <div className="relative z-10">
