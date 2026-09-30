@@ -10,7 +10,7 @@ export function Hero() {
         src={heroLeft}
         alt=""
         aria-hidden="true"
-        className="pointer-events-none absolute left-[-70px] top-12 z-0 hidden w-[28rem] -translate-x-1/4 rotate-[20deg] select-none lg:block"
+        className="pointer-events-none absolute left-[-100px] top-12 z-0 hidden w-[28rem] -translate-x-1/4 rotate-[20deg] select-none lg:block"
       />
       <img
         src={heroRight}
