@@ -12,7 +12,7 @@ export interface ShareCardProps {
 export function ShareCard({ heroName, level, imageUrl, statsLine, frameColor, onClose }: ShareCardProps) {
   return (
     <div
-      className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-bg"
+      className="relative w-full max-w-[428px] overflow-hidden rounded-3xl border border-white/10 bg-bg"
       style={frameColor ? { boxShadow: `0 0 0 4px ${frameColor}` } : undefined}
     >
       {onClose && (
