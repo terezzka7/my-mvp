@@ -136,6 +136,7 @@ export function Hero() {
               imageUrl={shareData.imageUrl}
               statsLine={shareData.statsLine}
               onClose={() => setShowExample(false)}
+              downloadable={!!user}
             />
             {!user && (
               <a
