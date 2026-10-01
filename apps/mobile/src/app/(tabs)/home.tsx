@@ -4,10 +4,12 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { HeroPhoto } from '@/components/hero-photo';
+import { StatsSection } from '@/components/stats-section';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { resolveDisplayName } from '@/lib/display-name';
 import { flushWorkoutLogQueue, getPendingCount } from '@/lib/offline-queue';
 import { supabase } from '@/lib/supabase';
 import { markLevelUpShown, takeXpGain, wasLevelUpShown } from '@/lib/workout-result';
@@ -45,6 +47,8 @@ export default function HomeScreen() {
   const [loggedDays, setLoggedDays] = useState<boolean[]>(new Array(7).fill(false));
   const lastKnownLevel = useRef<number | null>(null);
   const [xpToast, setXpToast] = useState<number | null>(null);
+  // Bumped after every load, so the stats section re-reads (e.g. after logging a workout).
+  const [statsKey, setStatsKey] = useState(0);
 
   // "+N XP" left by the log sheet when the workout didn't level you up.
   useFocusEffect(
@@ -78,7 +82,7 @@ export default function HomeScreen() {
           { data: streakRow, error: streakError },
           { data: weekLogs, error: weekLogsError },
         ] = await Promise.all([
-          supabase.from('users').select('username').eq('id', currentUser.id).maybeSingle(),
+          supabase.from('users').select('username, display_name').eq('id', currentUser.id).maybeSingle(),
           supabase
             .from('characters')
             .select('name, level, xp_current, xp_to_next')
@@ -117,8 +121,10 @@ export default function HomeScreen() {
         setLoggedDays(days);
 
         setError(null);
+        // Same rule as Profile and the share card: the name from Settings, else the hero name.
+        const name = resolveDisplayName(me?.display_name, characterRow.name, me?.username ?? '');
         setCharacter({
-          name: characterRow.name,
+          name,
           level: characterRow.level,
           xpCurrent: characterRow.xp_current,
           xpToNext: characterRow.xp_to_next,
@@ -126,6 +132,7 @@ export default function HomeScreen() {
           username: me?.username ?? '',
         });
         setLoading(false);
+        setStatsKey((key) => key + 1);
 
         // Catches level-ups that happened without the log sheet seeing the
         // server's answer (e.g. a queued workout synced just now). The sheet
@@ -140,7 +147,7 @@ export default function HomeScreen() {
             pathname: '/level-up',
             params: {
               level: String(characterRow.level),
-              heroName: characterRow.name,
+              heroName: name,
               username: me?.username ?? '',
             },
           });
@@ -224,6 +231,8 @@ export default function HomeScreen() {
               variant="secondary"
               onPress={() => router.push('/customize')}
             />
+
+            {user && <StatsSection userId={user.id} refreshKey={statsKey} />}
           </>
         )}
       </ScrollView>
