@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { Avatar } from '../components/Avatar'
 import { Header } from '../components/Header'
+import { APP_STORE_URL } from '../lib/constants'
 import { supabase } from '../lib/supabase'
 
 interface ProfileData {
@@ -100,7 +101,9 @@ export function PublicProfile() {
               </ul>
             )}
             <a
-              href="#"
+              href={APP_STORE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
               className="mt-8 inline-block rounded-full bg-accent px-6 py-3 font-semibold text-black"
             >
               Создай своего
