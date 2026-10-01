@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { supabase } from '../lib/supabase'
+import { TYPE_LABELS } from '../lib/stats'
 import type { WorkoutLogsRow } from '../lib/database.types'
 
 export function History() {
@@ -43,8 +44,9 @@ export function History() {
     }
   }, [])
 
+  // The search matches what is shown: the Russian name of the type.
   const filtered = (workouts ?? []).filter((workout) =>
-    workout.type.includes(query.toLowerCase()),
+    TYPE_LABELS[workout.type].toLowerCase().includes(query.trim().toLowerCase()),
   )
 
   return (
@@ -76,7 +78,7 @@ export function History() {
                       className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3 hover:border-accent"
                     >
                       <span>
-                        {new Date(workout.logged_at).toLocaleDateString()} · {workout.type}
+                        {new Date(workout.logged_at).toLocaleDateString()} · {TYPE_LABELS[workout.type]}
                       </span>
                       <span className="text-accent">+{workout.xp_earned} XP</span>
                     </Link>
