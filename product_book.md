@@ -719,7 +719,7 @@ Email → Universal Link → M-04 или W-04
 | subscription_expires_at | timestamptz | Дата истечения | Нет |
 | currency_earned | integer | Баланс зарабатываемой валюты | Да |
 | currency_premium | integer | Баланс премиум-валюты | Да |
-| weekly_goal | integer | Цель тренировок в неделю, 1–14, по умолчанию 4. Добавлено поверх исходной схемы по требованию дизайнера (в книге не было) — см. supabase/add_weekly_goal.sql. Меняется только в мобильных настройках (M-15), на вебе читается в Статистике | Да |
+| weekly_goal | integer | Устарело: приложения больше не читают и не пишут эту колонку, цель по неделям хранится в `weekly_goals` (см. ниже). Осталась только как источник для стартовой записи истории — supabase/add_weekly_goals.sql | Да |
 
 ### Таблица: characters (1:1 → users)
 
@@ -829,6 +829,20 @@ Email → Universal Link → M-04 или W-04
 | last_workout_date | date | Последняя тренировка | Да |
 | created_at / updated_at | timestamptz | – | Да |
 
+### Таблица: weekly_goals (1:N → users)
+
+Добавлено поверх исходной схемы по требованию дизайнера (в книге не было) — см. supabase/add_weekly_goals.sql. История цели «тренировок в неделю»: цель может отличаться от недели к неделе, прошлые недели сохраняют ту цель, которая была у них.
+
+| Поле | Тип | Описание | Обяз. |
+|------|-----|----------|-------|
+| id | uuid | PK | Да |
+| user_id | uuid → users.id | FK (on delete cascade) | Да |
+| week_start | date | Понедельник недели, с которой действует цель (check: isodow = 1). Unique вместе с user_id | Да |
+| goal | integer | Цель тренировок в неделю, 1–14 | Да |
+| created_at / updated_at | timestamptz | – | Да |
+
+Цель недели = запись этой недели, иначе последняя более ранняя запись, иначе 4 (значение по умолчанию в приложениях). Меняется только в мобильных настройках (M-15): запись для текущей недели (upsert), будущие недели наследуют её. На вебе читается в Статистике.
+
 ### Таблица: template_assets (справочник, заменяет ai_generation_logs в V4)
 
 | Поле | Тип | Описание | Обяз. |
@@ -849,6 +863,7 @@ Email → Universal Link → M-04 или W-04
 users 1:1 → characters
 users 1:1 → streaks
 users 1:N → workout_logs
+users 1:N → weekly_goals
 users N:M → challenges (через user_challenges)
 users N:M → items (через user_items)
 users 1:N → share_cards
@@ -869,6 +884,7 @@ characters → template_assets (body_template_id, style_template_id — спра
 | user_items | auth.uid() = user_id | Edge Function | Запрещено | Запрещено |
 | share_cards | auth.uid() = user_id | auth.uid() = user_id | Запрещено | Запрещено |
 | streaks | auth.uid() = user_id | Edge Function | Edge Function | Запрещено |
+| weekly_goals | auth.uid() = user_id | auth.uid() = user_id | auth.uid() = user_id | Запрещено (запись удаляется каскадом вместе с users) |
 | template_assets | Все авторизованные | service_role | service_role | service_role |
 
 ---

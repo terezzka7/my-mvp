@@ -136,6 +136,15 @@ export type StreaksRow = {
   updated_at: string
 }
 
+export type WeeklyGoalsRow = {
+  id: string
+  user_id: string
+  week_start: string
+  goal: number
+  created_at: string
+  updated_at: string
+}
+
 export type TemplateAssetsRow = {
   id: string
   category: TemplateCategory
@@ -291,6 +300,18 @@ export type Database = {
             foreignKeyName: 'streaks_user_id_fkey'
             columns: ['user_id']
             isOneToOne: true
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      >
+      weekly_goals: TableDef<
+        WeeklyGoalsRow,
+        [
+          {
+            foreignKeyName: 'weekly_goals_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
             referencedRelation: 'users'
             referencedColumns: ['id']
           },
