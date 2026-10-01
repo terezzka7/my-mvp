@@ -35,6 +35,7 @@ export type UsersRow = {
   push_enabled: boolean
   reminder_enabled: boolean
   is_private: boolean
+  weekly_goal: number
 }
 
 export type CharactersRow = {

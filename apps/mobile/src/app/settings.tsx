@@ -10,6 +10,10 @@ import { useAuth } from '@/hooks/use-auth';
 import type { UsersRow } from '@/lib/database.types';
 import { supabase } from '@/lib/supabase';
 
+// Same bounds as the check constraint in supabase/add_weekly_goal.sql.
+const GOAL_MIN = 1;
+const GOAL_MAX = 14;
+
 interface Toggle {
   key: 'push_enabled' | 'reminder_enabled' | 'is_private';
   label: string;
@@ -40,11 +44,26 @@ export default function SettingsScreen() {
   });
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  // null = not loaded (or the weekly_goal column isn't there yet): the row is hidden.
+  const [weeklyGoal, setWeeklyGoal] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       if (!user) return;
       let active = true;
+
+      // Own query so the rest of Settings still loads if this column is missing.
+      supabase
+        .from('users')
+        .select('weekly_goal')
+        .eq('id', user.id)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (!active) return;
+          if (error) console.error(error);
+          else if (data) setWeeklyGoal(data.weekly_goal);
+        });
+
       supabase
         .from('users')
         .select('email, display_name, push_enabled, reminder_enabled, is_private')
@@ -79,6 +98,20 @@ export default function SettingsScreen() {
     if (error) {
       console.error(error);
       setValues((prev) => ({ ...prev, [key]: !next }));
+    }
+  }
+
+  // Saves right away, like the toggles. The web Stats page only reads this.
+  async function changeGoal(delta: number) {
+    if (!user || weeklyGoal === null) return;
+    const next = Math.min(GOAL_MAX, Math.max(GOAL_MIN, weeklyGoal + delta));
+    if (next === weeklyGoal) return;
+    const previous = weeklyGoal;
+    setWeeklyGoal(next);
+    const { error } = await supabase.from('users').update({ weekly_goal: next }).eq('id', user.id);
+    if (error) {
+      console.error(error);
+      setWeeklyGoal(previous);
     }
   }
 
@@ -170,6 +203,44 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {!loading && weeklyGoal !== null && (
+          <View style={styles.goalRow}>
+            <View style={styles.goalText}>
+              <ThemedText type="body">Цель тренировок в неделю</ThemedText>
+              <ThemedText type="bodyMuted" style={styles.goalHint}>
+                Видна в статистике на сайте
+              </ThemedText>
+            </View>
+            <View style={styles.stepper}>
+              <Pressable
+                style={[styles.stepButton, weeklyGoal <= GOAL_MIN && styles.stepButtonOff]}
+                onPress={() => changeGoal(-1)}
+                disabled={weeklyGoal <= GOAL_MIN}
+                hitSlop={8}
+                accessibilityLabel="Уменьшить цель"
+              >
+                <ThemedText type="title" style={styles.stepLabel}>
+                  −
+                </ThemedText>
+              </Pressable>
+              <ThemedText type="title" style={styles.goalValue}>
+                {weeklyGoal}
+              </ThemedText>
+              <Pressable
+                style={[styles.stepButton, weeklyGoal >= GOAL_MAX && styles.stepButtonOff]}
+                onPress={() => changeGoal(1)}
+                disabled={weeklyGoal >= GOAL_MAX}
+                hitSlop={8}
+                accessibilityLabel="Увеличить цель"
+              >
+                <ThemedText type="title" style={styles.stepLabel}>
+                  +
+                </ThemedText>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         {!loading && (
           <View style={styles.group}>
             {TOGGLES.map((t) => (
@@ -241,6 +312,51 @@ const styles = StyleSheet.create({
   },
   proTitle: {
     color: Colors.accentText,
+  },
+  goalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    padding: Spacing.three,
+  },
+  goalText: {
+    flex: 1,
+    gap: Spacing.half,
+  },
+  goalHint: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  stepButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepButtonOff: {
+    opacity: 0.35,
+  },
+  stepLabel: {
+    color: Colors.accent,
+    fontSize: 22,
+    lineHeight: 26,
+  },
+  goalValue: {
+    minWidth: 28,
+    textAlign: 'center',
   },
   nameBlock: {
     gap: Spacing.two,
