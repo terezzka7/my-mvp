@@ -1,31 +1,10 @@
 import { Tabs } from 'expo-router';
-import { View, type ColorValue } from 'react-native';
-
+import { TabIcon } from '@/components/tab-icon';
 import { Colors, Spacing } from '@/constants/theme';
 
 // M-04/M-07/M-10/M-12 tab bar (§9.2: "Tab Bar" root of the primary
-// nav). Geometric shapes instead of an icon library — no icon package
-// is in §11, and these four shapes (square/diamond/circle/ring) are
-// simple enough as plain Views, matching how the design mockup itself
-// drew them (colored divs, no icon font).
-function TabIcon({ shape, color }: { shape: 'square' | 'diamond' | 'circle' | 'ring'; color: ColorValue }) {
-  if (shape === 'ring') {
-    return (
-      <View
-        style={{ width: 16, height: 16, borderRadius: 8, borderWidth: 2.5, borderColor: color }}
-      />
-    );
-  }
-  if (shape === 'diamond') {
-    return (
-      <View
-        style={{ width: 13, height: 13, backgroundColor: color, borderRadius: 3, transform: [{ rotate: '45deg' }] }}
-      />
-    );
-  }
-  const borderRadius = shape === 'circle' ? 8 : 4;
-  return <View style={{ width: 16, height: 16, borderRadius, backgroundColor: color }} />;
-}
+// nav). Icons are drawn from plain Views in components/tab-icon.tsx —
+// no icon package is in §11.
 
 export default function TabsLayout() {
   return (
@@ -47,28 +26,28 @@ export default function TabsLayout() {
         name="home"
         options={{
           title: 'Дом',
-          tabBarIcon: ({ color }) => <TabIcon shape="square" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon name="home" color={color} />,
         }}
       />
       <Tabs.Screen
         name="challenges"
         options={{
           title: 'Челленджи',
-          tabBarIcon: ({ color }) => <TabIcon shape="diamond" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon name="challenges" color={color} />,
         }}
       />
       <Tabs.Screen
         name="shop"
         options={{
           title: 'Магазин',
-          tabBarIcon: ({ color }) => <TabIcon shape="circle" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon name="shop" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Профиль',
-          tabBarIcon: ({ color }) => <TabIcon shape="ring" color={color} />,
+          tabBarIcon: ({ color }) => <TabIcon name="profile" color={color} />,
         }}
       />
     </Tabs>
