@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { Avatar } from '../components/Avatar'
 import { Header } from '../components/Header'
 import { supabase } from '../lib/supabase'
 
@@ -86,7 +87,7 @@ export function PublicProfile() {
         {error && <p className="text-red-400">{error}</p>}
         {!loading && !error && profile && (
           <>
-            <div className="mx-auto h-40 w-40 rounded-full border border-white/10 bg-white/5" />
+            <Avatar className="mx-auto h-40 w-40" />
             <h1 className="mt-6 font-display text-3xl font-extrabold">
               {profile.displayName ?? username}
             </h1>

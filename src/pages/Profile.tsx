@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Avatar } from '../components/Avatar'
 import { Header } from '../components/Header'
 import { supabase } from '../lib/supabase'
-import terezaCharacter from '../assets/tereza.png'
 
 interface ProfileData {
   displayName: string | null
@@ -77,15 +77,7 @@ export function Profile() {
         {!loading && !error && profile && (
           <>
             <div className="flex items-center gap-6">
-              {/* TODO: character.image_url once real Storage-rendered
-                  characters exist — placeholder photo for now. */}
-              <div className="relative h-24 w-24 overflow-hidden rounded-full border border-white/10 bg-white/5">
-                <img
-                  src={terezaCharacter}
-                  alt=""
-                  className="absolute left-1/2 top-0 w-[190px] max-w-none -translate-x-1/2"
-                />
-              </div>
+              <Avatar className="h-24 w-24 shrink-0" />
               <div>
                 <h1 className="font-display text-2xl font-extrabold">
                   {profile.displayName ?? 'Игрок'}
