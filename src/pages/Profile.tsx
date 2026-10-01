@@ -5,6 +5,7 @@ import { Header } from '../components/Header'
 import { supabase } from '../lib/supabase'
 
 interface ProfileData {
+  username: string | null
   displayName: string | null
   level: number
   currentStreak: number
@@ -29,7 +30,7 @@ export function Profile() {
       const [{ data: me, error: meError }, { data: character, error: characterError },
         { data: streak, error: streakError }, { data: activeChallenges, error: challengesError }] =
         await Promise.all([
-          supabase.from('users').select('display_name').eq('id', user.id).maybeSingle(),
+          supabase.from('users').select('username, display_name').eq('id', user.id).maybeSingle(),
           supabase.from('characters').select('level').eq('user_id', user.id).maybeSingle(),
           supabase.from('streaks').select('current_streak').eq('user_id', user.id).maybeSingle(),
           supabase
@@ -50,6 +51,7 @@ export function Profile() {
       }
 
       setProfile({
+        username: me?.username ?? null,
         displayName: me?.display_name ?? null,
         level: character?.level ?? 1,
         currentStreak: streak?.current_streak ?? 0,
@@ -77,7 +79,7 @@ export function Profile() {
         {!loading && !error && profile && (
           <>
             <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24 shrink-0" />
+              <Avatar className="h-24 w-24 shrink-0" username={profile.username} />
               <div>
                 <h1 className="font-display text-2xl font-extrabold">
                   {profile.displayName ?? 'Игрок'}

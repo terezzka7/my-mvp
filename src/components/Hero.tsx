@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { APP_NAME, APP_STORE_URL } from '../lib/constants'
+import { getPlaceholderAvatar } from '../lib/placeholder-avatars'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import heroLeft from '../assets/hero-left.png'
 import heroRight from '../assets/hero-right.png'
 import demoCharacter from '../assets/demo-character.png'
-import terezaCharacter from '../assets/tereza.png'
 import { ShareCard } from './ShareCard'
 
 const DEMO_SHARE_DATA = {
@@ -35,7 +35,8 @@ export function Hero() {
     let active = true
 
     async function load() {
-      const [{ data: character }, { data: streak }, { count: workouts }] = await Promise.all([
+      const [{ data: me }, { data: character }, { data: streak }, { count: workouts }] = await Promise.all([
+        supabase.from('users').select('username').eq('id', user!.id).maybeSingle(),
         supabase.from('characters').select('name, level, image_url').eq('user_id', user!.id).maybeSingle(),
         supabase.from('streaks').select('current_streak').eq('user_id', user!.id).maybeSingle(),
         supabase.from('workout_logs').select('id', { count: 'exact', head: true }).eq('user_id', user!.id),
@@ -48,7 +49,7 @@ export function Hero() {
         level: character.level,
         // TODO: character.image_url once real Storage-rendered characters
         // exist — placeholder photo for now per founder's request.
-        imageUrl: terezaCharacter,
+        imageUrl: getPlaceholderAvatar(me?.username).src,
         statsLine: `${workouts ?? 0} тренировок · серия ${streak?.current_streak ?? 0} дней`,
       })
     }

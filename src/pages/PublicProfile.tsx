@@ -88,7 +88,7 @@ export function PublicProfile() {
         {error && <p className="text-red-400">{error}</p>}
         {!loading && !error && profile && (
           <>
-            <Avatar className="mx-auto h-40 w-40" />
+            <Avatar className="mx-auto h-40 w-40" username={username} />
             <h1 className="mt-6 font-display text-3xl font-extrabold">
               {profile.displayName ?? username}
             </h1>
