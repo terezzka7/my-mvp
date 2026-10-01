@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
-import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -36,6 +35,8 @@ export default function SettingsScreen() {
   const { user } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState('');
+  // The name as stored: the check mark is live only while the field differs from it.
+  const [savedName, setSavedName] = useState('');
   const [savingName, setSavingName] = useState(false);
   const [nameMessage, setNameMessage] = useState<string | null>(null);
   const [values, setValues] = useState<Record<Toggle['key'], boolean>>({
@@ -69,6 +70,7 @@ export default function SettingsScreen() {
           if (data) {
             setEmail(data.email);
             setDisplayName(data.display_name ?? '');
+            setSavedName(data.display_name ?? '');
             setValues({
               push_enabled: data.push_enabled,
               reminder_enabled: data.reminder_enabled,
@@ -106,8 +108,10 @@ export default function SettingsScreen() {
     if (!(await saveCurrentGoal(user.id, next))) setWeeklyGoal(previous);
   }
 
+  const nameChanged = !savingName && displayName.trim() !== savedName;
+
   async function saveName() {
-    if (!user) return;
+    if (!user || !nameChanged) return;
     setSavingName(true);
     setNameMessage(null);
     const trimmed = displayName.trim();
@@ -123,6 +127,7 @@ export default function SettingsScreen() {
       return;
     }
     setDisplayName(trimmed);
+    setSavedName(trimmed);
     setNameMessage('Имя сохранено.');
   }
 
@@ -176,21 +181,34 @@ export default function SettingsScreen() {
         {!loading && (
           <View style={styles.nameBlock}>
             <ThemedText type="bodyMuted">Имя</ThemedText>
-            <TextInput
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Как вас показывать"
-              placeholderTextColor={Colors.textMuted}
-              style={styles.nameInput}
-              maxLength={24}
-              autoCapitalize="words"
-            />
+            <View style={styles.nameField}>
+              <TextInput
+                value={displayName}
+                onChangeText={(text) => {
+                  setDisplayName(text);
+                  setNameMessage(null);
+                }}
+                onSubmitEditing={nameChanged ? saveName : undefined}
+                returnKeyType="done"
+                placeholder="Как вас показывать"
+                placeholderTextColor={Colors.textMuted}
+                style={styles.nameInput}
+                maxLength={24}
+                autoCapitalize="words"
+              />
+              <Pressable
+                style={[styles.nameCheck, nameChanged && styles.nameCheckOn]}
+                onPress={saveName}
+                disabled={!nameChanged}
+                hitSlop={4}
+                accessibilityLabel="Сохранить имя"
+              >
+                <ThemedText type="title" style={[styles.nameCheckLabel, nameChanged && styles.nameCheckLabelOn]}>
+                  {savingName ? '…' : '✓'}
+                </ThemedText>
+              </Pressable>
+            </View>
             {nameMessage && <ThemedText type="bodyMuted">{nameMessage}</ThemedText>}
-            <Button
-              label={savingName ? 'Сохранение...' : 'Сохранить имя'}
-              onPress={saveName}
-              disabled={savingName}
-            />
           </View>
         )}
 
@@ -352,14 +370,39 @@ const styles = StyleSheet.create({
   nameBlock: {
     gap: Spacing.two,
   },
-  nameInput: {
+  nameField: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
     borderRadius: Radius.card,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
+    paddingLeft: Spacing.three,
+    paddingRight: Spacing.two,
+    gap: Spacing.two,
+  },
+  nameInput: {
+    flex: 1,
+    paddingVertical: Spacing.three,
     color: Colors.text,
     fontSize: 16,
+  },
+  nameCheck: {
+    width: 44,
+    height: 44,
+    borderRadius: Radius.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nameCheckOn: {
+    backgroundColor: Colors.accent,
+  },
+  nameCheckLabel: {
+    color: Colors.textMuted,
+    opacity: 0.4,
+  },
+  nameCheckLabelOn: {
+    color: Colors.accentText,
+    opacity: 1,
   },
   group: {
     borderRadius: Radius.card,
@@ -411,14 +454,15 @@ const styles = StyleSheet.create({
     color: '#ff6b6b',
   },
   dangerGroup: {
-    borderRadius: Radius.card,
-    borderWidth: 1,
-    borderColor: 'rgba(255,107,107,.35)',
-    padding: Spacing.three,
-    gap: Spacing.two,
+    alignItems: 'center',
+    gap: Spacing.one,
+    marginTop: Spacing.two,
   },
   dangerRow: {
+    minHeight: 44,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
   },
   dangerLabel: {
     color: '#ff6b6b',
