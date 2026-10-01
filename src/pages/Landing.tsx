@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { CardGrid, type PublicProfileSummary } from '../components/CardGrid'
+import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 import { Hero } from '../components/Hero'
+import { HowItWorks } from '../components/HowItWorks'
 import { SearchBar } from '../components/SearchBar'
+import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 
 const SEARCH_DEBOUNCE_MS = 300
@@ -17,6 +20,7 @@ function sanitizeSearch(raw: string) {
 }
 
 export function Landing() {
+  const { user, loading: authLoading } = useAuth()
   const [profiles, setProfiles] = useState<PublicProfileSummary[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -76,6 +80,7 @@ export function Landing() {
     <div className="min-h-screen bg-bg text-text">
       <Header />
       <Hero />
+      {!authLoading && !user && <HowItWorks />}
       <SearchBar value={search} onChange={setSearch} />
       {loading && <p className="py-16 text-center text-white/40">Загрузка...</p>}
       {error && <p className="py-16 text-center text-red-400">{error}</p>}
@@ -85,6 +90,7 @@ export function Landing() {
           emptyMessage={search.trim() ? 'Ничего не найдено' : undefined}
         />
       )}
+      <Footer />
     </div>
   )
 }
