@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { Avatar } from '@/components/avatar';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -14,7 +15,6 @@ interface ProfileData {
   name: string;
   level: number;
   xpCurrent: number;
-  imageUrl: string;
   workouts: number;
   streak: number;
   ownedCount: number;
@@ -42,7 +42,7 @@ export default function ProfileScreen() {
           { count: itemsCount, error: itemsError },
         ] = await Promise.all([
           supabase.from('users').select('username, display_name').eq('id', user!.id).maybeSingle(),
-          supabase.from('characters').select('name, level, xp_current, image_url').eq('user_id', user!.id).maybeSingle(),
+          supabase.from('characters').select('name, level, xp_current').eq('user_id', user!.id).maybeSingle(),
           supabase.from('streaks').select('current_streak').eq('user_id', user!.id).maybeSingle(),
           supabase.from('workout_logs').select('id', { count: 'exact', head: true }).eq('user_id', user!.id),
           supabase.from('user_items').select('id', { count: 'exact', head: true }).eq('user_id', user!.id),
@@ -58,7 +58,6 @@ export default function ProfileScreen() {
             name: resolveDisplayName(me.display_name, character.name, me.username),
             level: character.level,
             xpCurrent: character.xp_current,
-            imageUrl: character.image_url,
             workouts: workoutsCount ?? 0,
             streak: streakRow?.current_streak ?? 0,
             ownedCount: itemsCount ?? 0,
@@ -90,7 +89,7 @@ export default function ProfileScreen() {
         </ThemedText>
 
         <View style={styles.headerRow}>
-          <Image source={{ uri: data.imageUrl }} style={styles.avatar} resizeMode="cover" />
+          <Avatar username={data.username} size={82} />
           <View style={styles.headerInfo}>
             <ThemedText type="title">{data.name}</ThemedText>
             <ThemedText type="overline">
@@ -150,12 +149,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.three,
     alignItems: 'center',
-  },
-  avatar: {
-    width: 82,
-    height: 82,
-    borderRadius: Radius.card,
-    backgroundColor: Colors.surface,
   },
   headerInfo: {
     flex: 1,
