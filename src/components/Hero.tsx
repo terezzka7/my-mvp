@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { APP_NAME } from '../lib/constants'
+import { APP_NAME, APP_STORE_URL } from '../lib/constants'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import heroLeft from '../assets/hero-left.png'
@@ -105,7 +105,7 @@ export function Hero() {
           {!loading && !user && (
             <>
               <a
-                href="https://apps.apple.com/ru/iphone/search"
+                href={APP_STORE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="rounded-full bg-accent px-6 py-3 font-semibold text-black"
@@ -140,7 +140,7 @@ export function Hero() {
             />
             {!user && (
               <a
-                href="https://apps.apple.com/ru/iphone/search"
+                href={APP_STORE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-4 block rounded-full bg-accent px-6 py-3 text-center font-semibold text-black"

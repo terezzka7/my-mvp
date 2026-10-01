@@ -1,14 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { APP_NAME } from '../lib/constants'
+import { APP_NAME, APP_STORE_URL, PROTECTED_LINKS } from '../lib/constants'
 import { supabase } from '../lib/supabase'
-
-const PROTECTED_LINKS = [
-  { label: 'Профиль', to: '/profile' },
-  { label: 'История', to: '/profile/history' },
-  { label: 'Статистика', to: '/profile/stats' },
-  { label: 'Настройки', to: '/settings' },
-]
 
 export function Header() {
   const { user, loading } = useAuth()
@@ -57,7 +50,7 @@ export function Header() {
           </button>
         ) : (
           <a
-            href="https://apps.apple.com/ru/iphone/search"
+            href={APP_STORE_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-black"
