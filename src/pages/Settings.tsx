@@ -155,9 +155,8 @@ export function Settings() {
         )}
 
         {!loading && !error && (
-          <div className="mt-12 rounded-lg border border-red-500/30 p-4">
-            <h2 className="font-semibold text-red-400">Удалить аккаунт</h2>
-            <p className="mt-1 text-sm text-white/50">
+          <div className="mt-12">
+            <p className="text-sm text-white/50">
               Удаляются персонаж, тренировки, статистика и сам аккаунт без возможности восстановления.
             </p>
 
