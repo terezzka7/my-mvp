@@ -80,7 +80,6 @@ export function Landing() {
     <div className="min-h-screen bg-bg text-text">
       <Header />
       <Hero />
-      {!authLoading && !user && <HowItWorks />}
       <SearchBar value={search} onChange={setSearch} />
       {loading && <p className="py-16 text-center text-white/40">Загрузка...</p>}
       {error && <p className="py-16 text-center text-red-400">{error}</p>}
@@ -90,6 +89,7 @@ export function Landing() {
           emptyMessage={search.trim() ? 'Ничего не найдено' : undefined}
         />
       )}
+      {!authLoading && !user && <HowItWorks />}
       <Footer />
     </div>
   )
