@@ -12,7 +12,9 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.accent,
-        tabBarInactiveTintColor: Colors.textMuted,
+        // Solid grey (what textMuted looks like on the bar): a see-through colour
+        // makes the strokes darker where an icon's lines cross.
+        tabBarInactiveTintColor: '#808080',
         tabBarStyle: {
           backgroundColor: Colors.bg,
           borderTopColor: Colors.border,

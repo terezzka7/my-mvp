@@ -1,171 +1,39 @@
-import { View, type ColorValue } from 'react-native';
+import Svg, { Circle, Path } from 'react-native-svg';
+import type { ColorValue } from 'react-native';
 
-// Tab bar icons drawn from plain Views: no icon package is named in §11, and
-// four simple outline glyphs don't need one. Each sits in a 24×24 box with a
-// 2px stroke, so they read as one set; colour comes from the tab tint.
+// Tab bar icons: the Lucide glyphs house, trophy, shopping-bag and user
+// (https://lucide.dev, ISC license), drawn with react-native-svg. 24×24 grid,
+// 2px round stroke; the colour comes from the tab tint.
 export type TabIconName = 'home' | 'challenges' | 'shop' | 'profile';
 
-const SIZE = 24;
-const STROKE = 2;
-
-function Home({ color }: { color: ColorValue }) {
-  return (
-    <>
-      {/* roof: a rotated square with only its top-left corner drawn */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 3,
-          left: 5,
-          width: 14,
-          height: 14,
-          borderLeftWidth: STROKE,
-          borderTopWidth: STROKE,
-          borderColor: color,
-          borderTopLeftRadius: 3,
-          transform: [{ rotate: '45deg' }],
-        }}
-      />
-      {/* walls */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 1,
-          left: 5,
-          width: 14,
-          height: 11,
-          borderWidth: STROKE,
-          borderTopWidth: 0,
-          borderColor: color,
-          borderBottomLeftRadius: 3,
-          borderBottomRightRadius: 3,
-        }}
-      />
-      {/* door */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 3,
-          left: 10,
-          width: 4,
-          height: 5,
-          backgroundColor: color,
-          borderTopLeftRadius: 2,
-          borderTopRightRadius: 2,
-        }}
-      />
-    </>
-  );
-}
-
-// A flag on a pole: the goal you are heading for.
-function Challenges({ color }: { color: ColorValue }) {
-  return (
-    <>
-      <View
-        style={{
-          position: 'absolute',
-          top: 2,
-          left: 5,
-          width: STROKE,
-          height: 20,
-          borderRadius: 1,
-          backgroundColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: 'absolute',
-          top: 3,
-          left: 7,
-          width: 13,
-          height: 9,
-          backgroundColor: color,
-          borderTopRightRadius: 3,
-          borderBottomRightRadius: 3,
-        }}
-      />
-    </>
-  );
-}
-
-function Shop({ color }: { color: ColorValue }) {
-  return (
-    <>
-      {/* handle */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 1,
-          left: 8,
-          width: 8,
-          height: 7,
-          borderWidth: STROKE,
-          borderBottomWidth: 0,
-          borderColor: color,
-          borderTopLeftRadius: 4,
-          borderTopRightRadius: 4,
-        }}
-      />
-      {/* bag */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 1,
-          left: 3,
-          width: 18,
-          height: 15,
-          borderWidth: STROKE,
-          borderColor: color,
-          borderRadius: 4,
-        }}
-      />
-    </>
-  );
-}
-
-function Profile({ color }: { color: ColorValue }) {
-  return (
-    <>
-      {/* head */}
-      <View
-        style={{
-          position: 'absolute',
-          top: 1,
-          left: 7,
-          width: 10,
-          height: 10,
-          borderWidth: STROKE,
-          borderColor: color,
-          borderRadius: 5,
-        }}
-      />
-      {/* shoulders */}
-      <View
-        style={{
-          position: 'absolute',
-          bottom: 1,
-          left: 3,
-          width: 18,
-          height: 9,
-          borderWidth: STROKE,
-          borderBottomWidth: 0,
-          borderColor: color,
-          borderTopLeftRadius: 9,
-          borderTopRightRadius: 9,
-        }}
-      />
-    </>
-  );
-}
+const PATHS: Record<TabIconName, string[]> = {
+  home: [
+    'M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8',
+    'M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z',
+  ],
+  challenges: [
+    'M10 14.66V17a1 1 0 0 1-1 1 2 2 0 0 0-2 2v2',
+    'M14 14.66V17a1 1 0 0 0 1 1 2 2 0 0 1 2 2v2',
+    'M17.916 10H19.5A2.5 2.5 0 0 0 22 7.5V5a1 1 0 0 0-1-1h-3',
+    'M4 22h16',
+    'M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z',
+    'M6.084 10H4.5A2.5 2.5 0 0 1 2 7.5V5a1 1 0 0 1 1-1h3',
+  ],
+  shop: [
+    'M16 10a4 4 0 0 1-8 0',
+    'M3.103 6.034h17.794',
+    'M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z',
+  ],
+  profile: ['M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2'],
+};
 
 export function TabIcon({ name, color }: { name: TabIconName; color: ColorValue }) {
   return (
-    <View style={{ width: SIZE, height: SIZE }}>
-      {name === 'home' && <Home color={color} />}
-      {name === 'challenges' && <Challenges color={color} />}
-      {name === 'shop' && <Shop color={color} />}
-      {name === 'profile' && <Profile color={color} />}
-    </View>
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      {PATHS[name].map((d) => (
+        <Path key={d} d={d} />
+      ))}
+      {name === 'profile' && <Circle cx={12} cy={7} r={4} />}
+    </Svg>
   );
 }
