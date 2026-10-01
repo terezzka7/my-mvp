@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { Footer } from './components/Footer'
 import { RequireAuth } from './components/RequireAuth'
 import { useAuth } from './hooks/useAuth'
 import { History } from './pages/History'
@@ -24,52 +25,57 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/u/:username" element={<PublicProfile />} />
-        <Route
-          path="/profile"
-          element={
-            <RequireAuth>
-              <Profile />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/profile/stats"
-          element={
-            <RequireAuth>
-              <Stats />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/profile/history"
-          element={
-            <RequireAuth>
-              <History />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/profile/history/:id"
-          element={
-            <RequireAuth>
-              <WorkoutDetail />
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <RequireAuth>
-              <Settings />
-            </RequireAuth>
-          }
-        />
-      </Routes>
+      <div className="flex min-h-screen flex-col">
+        <main className="flex-1">
+          <Routes>
+            <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/u/:username" element={<PublicProfile />} />
+            <Route
+              path="/profile"
+              element={
+                <RequireAuth>
+                  <Profile />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/profile/stats"
+              element={
+                <RequireAuth>
+                  <Stats />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/profile/history"
+              element={
+                <RequireAuth>
+                  <History />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/profile/history/:id"
+              element={
+                <RequireAuth>
+                  <WorkoutDetail />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <RequireAuth>
+                  <Settings />
+                </RequireAuth>
+              }
+            />
+          </Routes>
+        </main>
+        <Footer />
+      </div>
     </BrowserRouter>
   )
 }

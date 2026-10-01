@@ -9,7 +9,7 @@ export function HowItWorks() {
   // z-10 + opaque cards: Hero's side characters hang down into this
   // section, and the step text must stay readable over them.
   return (
-    <section className="relative z-10 mx-auto max-w-6xl px-6 py-16">
+    <section className="relative z-10 mx-auto max-w-6xl px-6 pb-32 pt-16">
       <h2 className="text-center font-display text-4xl font-extrabold">Как это работает</h2>
       <ol className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {STEPS.map((step, index) => (

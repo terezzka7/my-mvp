@@ -33,7 +33,7 @@ export function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="bg-bg text-text">
       <Header />
       <div className="mx-auto max-w-sm px-6 py-20">
         <h1 className="text-center font-display text-3xl font-extrabold">Войти</h1>

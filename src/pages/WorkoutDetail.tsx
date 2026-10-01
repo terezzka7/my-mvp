@@ -47,7 +47,7 @@ export function WorkoutDetail() {
   }, [id])
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="bg-bg text-text">
       <Header />
       <div className="mx-auto max-w-md px-6 py-16">
         <Link to="/profile/history" className="text-sm text-white/50 hover:text-accent">

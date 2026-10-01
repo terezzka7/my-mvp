@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { CardGrid, type PublicProfileSummary } from '../components/CardGrid'
-import { Footer } from '../components/Footer'
 import { Header } from '../components/Header'
 import { Hero } from '../components/Hero'
 import { HowItWorks } from '../components/HowItWorks'
@@ -77,7 +76,7 @@ export function Landing() {
   }, [search])
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="bg-bg text-text">
       <Header />
       <Hero />
       <SearchBar value={search} onChange={setSearch} />
@@ -90,7 +89,6 @@ export function Landing() {
         />
       )}
       {!authLoading && !user && <HowItWorks />}
-      <Footer />
     </div>
   )
 }

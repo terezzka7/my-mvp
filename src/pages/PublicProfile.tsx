@@ -79,7 +79,7 @@ export function PublicProfile() {
   }, [username])
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="bg-bg text-text">
       <Header />
       <div className="mx-auto max-w-xl px-6 py-20 text-center">
         {loading && <p className="text-white/40">Загрузка...</p>}
