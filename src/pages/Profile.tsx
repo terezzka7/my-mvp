@@ -79,11 +79,13 @@ export function Profile() {
             <div className="flex items-center gap-6">
               {/* TODO: character.image_url once real Storage-rendered
                   characters exist — placeholder photo for now. */}
-              <img
-                src={terezaCharacter}
-                alt=""
-                className="h-24 w-24 rounded-full border border-white/10 bg-white/5 object-cover object-top"
-              />
+              <div className="relative h-24 w-24 overflow-hidden rounded-full border border-white/10 bg-white/5">
+                <img
+                  src={terezaCharacter}
+                  alt=""
+                  className="absolute left-1/2 top-0 w-[190px] max-w-none -translate-x-1/2"
+                />
+              </div>
               <div>
                 <h1 className="font-display text-2xl font-extrabold">
                   {profile.displayName ?? 'Игрок'}
