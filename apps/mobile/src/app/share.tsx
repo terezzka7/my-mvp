@@ -6,11 +6,12 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { resolveDisplayName } from '@/lib/display-name';
 import { supabase } from '@/lib/supabase';
 
 interface ShareData {
   username: string;
-  heroName: string;
+  name: string;
   level: number;
   imageUrl: string;
   workouts: number;
@@ -33,7 +34,7 @@ export default function ShareScreen() {
 
       async function load() {
         const [{ data: me }, { data: character }, { count: workouts }, { data: streakRow }] = await Promise.all([
-          supabase.from('users').select('username').eq('id', user!.id).maybeSingle(),
+          supabase.from('users').select('username, display_name').eq('id', user!.id).maybeSingle(),
           supabase.from('characters').select('name, level, image_url').eq('user_id', user!.id).maybeSingle(),
           supabase.from('workout_logs').select('id', { count: 'exact', head: true }).eq('user_id', user!.id),
           supabase.from('streaks').select('current_streak').eq('user_id', user!.id).maybeSingle(),
@@ -41,7 +42,7 @@ export default function ShareScreen() {
         if (!active || !me || !character) return;
         setData({
           username: me.username,
-          heroName: character.name,
+          name: resolveDisplayName(me.display_name, character.name, me.username),
           level: character.level,
           imageUrl: character.image_url,
           workouts: workouts ?? 0,
@@ -60,7 +61,7 @@ export default function ShareScreen() {
     if (!data) return;
     try {
       await Share.share({
-        message: `${data.heroName} — уровень ${data.level} в Buildyfit. ${data.workouts} тренировок, серия ${data.streak} дней. buildyfit.app/u/${data.username}`,
+        message: `${data.name} — уровень ${data.level} в Buildyfit. ${data.workouts} тренировок, серия ${data.streak} дней. buildyfit.app/u/${data.username}`,
       });
     } catch (err) {
       console.error(err);
@@ -90,7 +91,7 @@ export default function ShareScreen() {
           </View>
           <Image source={{ uri: data.imageUrl }} style={styles.cardImage} resizeMode="contain" />
           <ThemedText type="display" style={styles.cardName}>
-            {data.heroName}
+            {data.name}
           </ThemedText>
           <ThemedText type="body" style={styles.cardStats}>
             {data.workouts} тренировок · серия {data.streak} дней

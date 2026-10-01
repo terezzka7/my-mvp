@@ -1,5 +1,16 @@
 import { supabase } from '@/lib/supabase';
 
+// The name typed on M-02b goes to both places that show it: the hero
+// (characters.name) and the person (users.display_name — what the web
+// catalog and public page read).
+async function saveName(name: string, userId: string) {
+  const [character, user] = await Promise.all([
+    supabase.from('characters').update({ name }).eq('user_id', userId),
+    supabase.from('users').update({ display_name: name }).eq('id', userId),
+  ]);
+  return character.error ?? user.error ?? null;
+}
+
 // Shared by character-assembly.tsx (session already exists) and by
 // signup.tsx/login.tsx (right after auth succeeds): calls the
 // assemble-character Edge Function (needs a JWT, hence this can only
@@ -26,9 +37,12 @@ export async function assembleCharacter({
   }
 
   if (name) {
-    const { error: nameError } = await supabase.from('characters').update({ name }).eq('user_id', userId);
-    if (nameError) {
-      console.error(nameError);
+    // Not fatal for onboarding (the name can be changed in Settings), but
+    // retry once and make a failure visible in logs instead of dropping it.
+    const firstTry = await saveName(name, userId);
+    if (firstTry) {
+      const secondTry = await saveName(name, userId);
+      if (secondTry) console.error('Failed to save the chosen name', secondTry);
     }
   }
 

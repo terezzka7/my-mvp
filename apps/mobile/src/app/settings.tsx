@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 
+import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -29,6 +30,9 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+  const [nameMessage, setNameMessage] = useState<string | null>(null);
   const [values, setValues] = useState<Record<Toggle['key'], boolean>>({
     push_enabled: true,
     reminder_enabled: true,
@@ -43,7 +47,7 @@ export default function SettingsScreen() {
       let active = true;
       supabase
         .from('users')
-        .select('email, push_enabled, reminder_enabled, is_private')
+        .select('email, display_name, push_enabled, reminder_enabled, is_private')
         .eq('id', user.id)
         .maybeSingle()
         .then(({ data, error }) => {
@@ -51,6 +55,7 @@ export default function SettingsScreen() {
           if (error) console.error(error);
           if (data) {
             setEmail(data.email);
+            setDisplayName(data.display_name ?? '');
             setValues({
               push_enabled: data.push_enabled,
               reminder_enabled: data.reminder_enabled,
@@ -75,6 +80,26 @@ export default function SettingsScreen() {
       console.error(error);
       setValues((prev) => ({ ...prev, [key]: !next }));
     }
+  }
+
+  async function saveName() {
+    if (!user) return;
+    setSavingName(true);
+    setNameMessage(null);
+    const trimmed = displayName.trim();
+    // Empty clears display_name, so screens fall back to the hero name.
+    const { error } = await supabase
+      .from('users')
+      .update({ display_name: trimmed || null })
+      .eq('id', user.id);
+    setSavingName(false);
+    if (error) {
+      console.error(error);
+      setNameMessage('Не удалось сохранить имя. Попробуйте ещё раз.');
+      return;
+    }
+    setDisplayName(trimmed);
+    setNameMessage('Имя сохранено.');
   }
 
   async function handleLogout() {
@@ -106,7 +131,7 @@ export default function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Pressable onPress={() => router.back()}>
           <ThemedText type="overline">← Профиль</ThemedText>
         </Pressable>
@@ -123,6 +148,27 @@ export default function SettingsScreen() {
             Все предметы и статистика
           </ThemedText>
         </Pressable>
+
+        {!loading && (
+          <View style={styles.nameBlock}>
+            <ThemedText type="bodyMuted">Имя</ThemedText>
+            <TextInput
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="Как вас показывать"
+              placeholderTextColor={Colors.textMuted}
+              style={styles.nameInput}
+              maxLength={24}
+              autoCapitalize="words"
+            />
+            {nameMessage && <ThemedText type="bodyMuted">{nameMessage}</ThemedText>}
+            <Button
+              label={savingName ? 'Сохранение...' : 'Сохранить имя'}
+              onPress={saveName}
+              disabled={savingName}
+            />
+          </View>
+        )}
 
         {!loading && (
           <View style={styles.group}>
@@ -195,6 +241,18 @@ const styles = StyleSheet.create({
   },
   proTitle: {
     color: Colors.accentText,
+  },
+  nameBlock: {
+    gap: Spacing.two,
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: Radius.card,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    color: Colors.text,
+    fontSize: 16,
   },
   group: {
     borderRadius: Radius.card,

@@ -6,11 +6,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { resolveDisplayName } from '@/lib/display-name';
 import { supabase } from '@/lib/supabase';
 
 interface ProfileData {
   username: string;
-  heroName: string;
+  name: string;
   level: number;
   xpCurrent: number;
   imageUrl: string;
@@ -40,7 +41,7 @@ export default function ProfileScreen() {
           { count: workoutsCount, error: workoutsError },
           { count: itemsCount, error: itemsError },
         ] = await Promise.all([
-          supabase.from('users').select('username').eq('id', user!.id).maybeSingle(),
+          supabase.from('users').select('username, display_name').eq('id', user!.id).maybeSingle(),
           supabase.from('characters').select('name, level, xp_current, image_url').eq('user_id', user!.id).maybeSingle(),
           supabase.from('streaks').select('current_streak').eq('user_id', user!.id).maybeSingle(),
           supabase.from('workout_logs').select('id', { count: 'exact', head: true }).eq('user_id', user!.id),
@@ -54,7 +55,7 @@ export default function ProfileScreen() {
         if (me && character) {
           setData({
             username: me.username,
-            heroName: character.name,
+            name: resolveDisplayName(me.display_name, character.name, me.username),
             level: character.level,
             xpCurrent: character.xp_current,
             imageUrl: character.image_url,
@@ -91,7 +92,7 @@ export default function ProfileScreen() {
         <View style={styles.headerRow}>
           <Image source={{ uri: data.imageUrl }} style={styles.avatar} resizeMode="cover" />
           <View style={styles.headerInfo}>
-            <ThemedText type="title">{data.heroName}</ThemedText>
+            <ThemedText type="title">{data.name}</ThemedText>
             <ThemedText type="overline">
               уровень {data.level} · {data.xpCurrent} XP
             </ThemedText>
