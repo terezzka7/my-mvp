@@ -1,8 +1,9 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Image, Pressable, Share, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { HeroPhoto } from '@/components/hero-photo';
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,7 +14,6 @@ interface ShareData {
   username: string;
   name: string;
   level: number;
-  imageUrl: string;
   workouts: number;
   streak: number;
 }
@@ -35,7 +35,7 @@ export default function ShareScreen() {
       async function load() {
         const [{ data: me }, { data: character }, { count: workouts }, { data: streakRow }] = await Promise.all([
           supabase.from('users').select('username, display_name').eq('id', user!.id).maybeSingle(),
-          supabase.from('characters').select('name, level, image_url').eq('user_id', user!.id).maybeSingle(),
+          supabase.from('characters').select('name, level').eq('user_id', user!.id).maybeSingle(),
           supabase.from('workout_logs').select('id', { count: 'exact', head: true }).eq('user_id', user!.id),
           supabase.from('streaks').select('current_streak').eq('user_id', user!.id).maybeSingle(),
         ]);
@@ -44,7 +44,6 @@ export default function ShareScreen() {
           username: me.username,
           name: resolveDisplayName(me.display_name, character.name, me.username),
           level: character.level,
-          imageUrl: character.image_url,
           workouts: workouts ?? 0,
           streak: streakRow?.current_streak ?? 0,
         });
@@ -89,7 +88,7 @@ export default function ShareScreen() {
               LVL {data.level}
             </ThemedText>
           </View>
-          <Image source={{ uri: data.imageUrl }} style={styles.cardImage} resizeMode="contain" />
+          <HeroPhoto username={data.username} height={220} style={styles.cardImage} />
           <ThemedText type="display" style={styles.cardName}>
             {data.name}
           </ThemedText>
@@ -142,8 +141,6 @@ const styles = StyleSheet.create({
     color: 'rgba(13,13,13,.55)',
   },
   cardImage: {
-    width: '100%',
-    height: 220,
     borderRadius: Radius.card,
   },
   cardName: {

@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
+import { HeroPhoto } from '@/components/hero-photo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
@@ -16,7 +17,7 @@ interface CharacterData {
   xpCurrent: number;
   xpToNext: number;
   streak: number;
-  imageUrl: string;
+  username: string;
 }
 
 const WEEK_LABELS = ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'];
@@ -59,13 +60,15 @@ export default function HomeScreen() {
         weekEnd.setDate(weekEnd.getDate() + 7);
 
         const [
+          { data: me, error: meError },
           { data: characterRow, error: characterError },
           { data: streakRow, error: streakError },
           { data: weekLogs, error: weekLogsError },
         ] = await Promise.all([
+          supabase.from('users').select('username').eq('id', currentUser.id).maybeSingle(),
           supabase
             .from('characters')
-            .select('name, level, xp_current, xp_to_next, image_url')
+            .select('name, level, xp_current, xp_to_next')
             .eq('user_id', currentUser.id)
             .maybeSingle(),
           supabase.from('streaks').select('current_streak').eq('user_id', currentUser.id).maybeSingle(),
@@ -79,7 +82,7 @@ export default function HomeScreen() {
 
         if (!active) return;
 
-        const firstError = characterError ?? streakError ?? weekLogsError;
+        const firstError = meError ?? characterError ?? streakError ?? weekLogsError;
         if (firstError) {
           console.error(firstError);
           setError('Не удалось загрузить данные. Попробуйте обновить экран.');
@@ -107,7 +110,7 @@ export default function HomeScreen() {
           xpCurrent: characterRow.xp_current,
           xpToNext: characterRow.xp_to_next,
           streak: streakRow?.current_streak ?? 0,
-          imageUrl: characterRow.image_url,
+          username: me?.username ?? '',
         });
         setLoading(false);
 
@@ -142,7 +145,7 @@ export default function HomeScreen() {
 
             <View style={styles.card}>
               <View style={styles.imageWrap}>
-                <Image source={{ uri: character.imageUrl }} style={styles.characterImage} resizeMode="contain" />
+                <HeroPhoto username={character.username} height={230} />
                 <View style={styles.levelBadge}>
                   <ThemedText type="overline" style={styles.levelBadgeText}>
                     LVL {character.level}
@@ -226,10 +229,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     overflow: 'hidden',
-  },
-  characterImage: {
-    width: '100%',
-    height: '100%',
   },
   levelBadge: {
     position: 'absolute',
