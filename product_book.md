@@ -729,7 +729,6 @@ Email → Universal Link → M-04 или W-04
 | push_enabled | boolean | Тумблер M-15 "Push-уведомления о челленджах" (добавлено поверх исходной схемы — см. supabase/add_settings_columns.sql; не подключено к реальной push-инфраструктуре, вне MVP) | Да |
 | reminder_enabled | boolean | Тумблер M-15 "Напоминание залогировать тренировку" (та же оговорка) | Да |
 | is_private | boolean | Тумблер M-15 "Скрыть публичный профиль" | Да |
-| weekly_goal | integer | Устарело: приложения больше не читают и не пишут эту колонку, цель по неделям хранится в `weekly_goals` (см. ниже). Осталась только как источник для стартовой записи истории — supabase/add_weekly_goals.sql | Да |
 
 ### Таблица: characters (1:1 → users)
 

@@ -1,4 +1,5 @@
--- Buildyfit -- weekly workout goal HISTORY (replaces the single users.weekly_goal).
+-- Buildyfit -- weekly workout goal HISTORY (replaces the old single users.weekly_goal idea;
+-- supabase/add_weekly_goal.sql, the singular one, is no longer needed).
 -- §10 doesn't list this table; adding it is a schema change the designer asked for:
 -- the goal can differ from week to week (5 this week, 6 the next), and past
 -- weeks keep the goal they had.
@@ -47,12 +48,11 @@ using (auth.uid() = user_id)
 with check (auth.uid() = user_id);
 -- No DELETE policy: history is never removed by the client.
 
--- Existing players: one starting row from the Monday of their sign-up week,
--- carrying the goal they already have in users.weekly_goal, so every past
--- week keeps the goal that was effectively in force.
+-- Existing players: one starting row from the Monday of their sign-up week with
+-- the default goal of 4, so every past week keeps the goal that was in force
+-- (nobody could change it before this table existed).
+-- Does not depend on users.weekly_goal: that column was never required.
 insert into weekly_goals (user_id, week_start, goal)
-select u.id, date_trunc('week', u.created_at)::date, u.weekly_goal
+select u.id, date_trunc('week', u.created_at)::date, 4
 from users u
 on conflict (user_id, week_start) do nothing;
-
--- users.weekly_goal stays in place but is no longer read or written by the apps.
