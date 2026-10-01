@@ -174,7 +174,7 @@ export default function SettingsScreen() {
             Buildyfit Pro
           </ThemedText>
           <ThemedText type="title" style={styles.proTitle}>
-            Все предметы и статистика
+            Все предметы и эксклюзивные скины
           </ThemedText>
         </Pressable>
 
