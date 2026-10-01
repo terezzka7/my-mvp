@@ -719,6 +719,7 @@ Email → Universal Link → M-04 или W-04
 | subscription_expires_at | timestamptz | Дата истечения | Нет |
 | currency_earned | integer | Баланс зарабатываемой валюты | Да |
 | currency_premium | integer | Баланс премиум-валюты | Да |
+| weekly_goal | integer | Цель тренировок в неделю, 1–14, по умолчанию 4. Добавлено поверх исходной схемы по требованию дизайнера (в книге не было) — см. supabase/add_weekly_goal.sql. Меняется только в мобильных настройках (M-15), на вебе читается в Статистике | Да |
 
 ### Таблица: characters (1:1 → users)
 

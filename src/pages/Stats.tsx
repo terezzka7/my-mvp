@@ -5,8 +5,8 @@ import { supabase } from '../lib/supabase'
 const FILTERS = ['Неделя', 'Месяц'] as const
 type Filter = (typeof FILTERS)[number]
 
-// Placeholder until the goal becomes a setting.
-const WEEKLY_GOAL = 4
+// Used until users.weekly_goal is read (or if reading it fails).
+const DEFAULT_WEEKLY_GOAL = 4
 // On the week view a day bar is full at this many workouts.
 const DAY_FULL = 3
 
@@ -90,7 +90,12 @@ function weekView(byDay: Map<string, { count: number; xp: number }>, offset: num
 }
 
 // Month = Monday-aligned weeks clipped to the month (1–4, 5–11, …).
-function monthView(byDay: Map<string, { count: number; xp: number }>, offset: number, now: Date): View {
+function monthView(
+  byDay: Map<string, { count: number; xp: number }>,
+  offset: number,
+  now: Date,
+  weeklyGoal: number,
+): View {
   const base = new Date(now.getFullYear(), now.getMonth() + offset, 1)
   const year = base.getFullYear()
   const month = base.getMonth()
@@ -117,7 +122,7 @@ function monthView(byDay: Map<string, { count: number; xp: number }>, offset: nu
     bars.push({
       label: startDay === 1 ? `${range} ${MONTHS_SHORT[month]}` : range,
       count,
-      fill: Math.min(count / WEEKLY_GOAL, 1),
+      fill: Math.min(count / weeklyGoal, 1),
       isCurrent: today >= startDate && today <= new Date(year, month, endDay),
       isFuture: startDate.getTime() > today.getTime(),
     })
@@ -134,6 +139,7 @@ export function Stats() {
   const [filter, setFilter] = useState<Filter>('Неделя')
   // 0 = current week/month, -1 = previous, …
   const [offset, setOffset] = useState(0)
+  const [weeklyGoal, setWeeklyGoal] = useState(DEFAULT_WEEKLY_GOAL)
 
   useEffect(() => {
     let active = true
@@ -145,13 +151,21 @@ export function Stats() {
 
       if (!active || !user) return
 
-      const { data, error } = await supabase
-        .from('workout_logs')
-        .select('logged_at, xp_earned')
-        .eq('user_id', user.id)
-        .order('logged_at', { ascending: true })
+      const [{ data, error }, { data: me, error: goalError }] = await Promise.all([
+        supabase
+          .from('workout_logs')
+          .select('logged_at, xp_earned')
+          .eq('user_id', user.id)
+          .order('logged_at', { ascending: true }),
+        // The goal is set in the mobile app's Settings; here it is read-only.
+        supabase.from('users').select('weekly_goal').eq('id', user.id).maybeSingle(),
+      ])
 
       if (!active) return
+
+      // A failed goal read (e.g. migration not applied yet) must not hide the chart.
+      if (goalError) console.error(goalError)
+      else if (me) setWeeklyGoal(me.weekly_goal)
 
       if (error) {
         console.error(error)
@@ -183,8 +197,8 @@ export function Stats() {
 
   const view = useMemo(() => {
     const now = new Date()
-    return filter === 'Неделя' ? weekView(byDay, offset, now) : monthView(byDay, offset, now)
-  }, [byDay, filter, offset])
+    return filter === 'Неделя' ? weekView(byDay, offset, now) : monthView(byDay, offset, now, weeklyGoal)
+  }, [byDay, filter, offset, weeklyGoal])
 
   function changeFilter(next: Filter) {
     setFilter(next)
@@ -223,13 +237,12 @@ export function Stats() {
             {(logs ?? []).length === 0 ? (
               <p className="mt-8 text-white/40">Пока нет тренировок для графика</p>
             ) : (
-              <div className="mt-6 rounded-3xl border border-white/10 bg-[#151515] p-6">
+              <div className="mt-6 max-w-xs rounded-3xl border border-white/10 bg-[#151515] p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="font-display text-xl font-extrabold">Тренировки</h2>
-                    <p className="mt-1 text-sm text-white/50">
-                      Цель: {WEEKLY_GOAL} в неделю · {view.rangeLabel}
-                    </p>
+                    <p className="mt-1 text-sm text-white/50">Цель: {weeklyGoal} в неделю</p>
+                    <p className="text-sm text-white/40">{view.rangeLabel}</p>
                   </div>
                   <div className="flex gap-1 text-lg text-white/60">
                     <button
@@ -256,20 +269,20 @@ export function Stats() {
                   {view.total}{' '}
                   <span className="text-sm font-semibold text-white/50">
                     {isWeek
-                      ? `из ${WEEKLY_GOAL} ${offset === 0 ? 'на этой неделе' : 'за неделю'}`
+                      ? `из ${weeklyGoal} ${offset === 0 ? 'на этой неделе' : 'за неделю'}`
                       : `${plural(view.total, 'тренировка', 'тренировки', 'тренировок')} за месяц`}
                   </span>
                 </p>
 
-                <div className="mt-5 flex h-48 gap-2.5">
+                <div className="mt-5 flex h-48 justify-center gap-2">
                   {view.bars.map((bar) => (
                     <div
                       key={bar.label}
-                      className="flex flex-1 flex-col items-center gap-2"
+                      className="flex w-8 flex-col items-center gap-2"
                       title={`${bar.label}: ${bar.count} ${plural(bar.count, 'тренировка', 'тренировки', 'тренировок')}`}
                     >
                       <div
-                        className={`relative w-8 flex-1 overflow-hidden rounded-full bg-white/[0.07] ${
+                        className={`relative w-full flex-1 overflow-hidden rounded-full bg-white/[0.07] ${
                           bar.isCurrent ? 'ring-2 ring-accent/40' : ''
                         } ${bar.isFuture ? 'opacity-45' : ''}`}
                       >
@@ -279,7 +292,7 @@ export function Stats() {
                         />
                       </div>
                       <span
-                        className={`text-xs ${bar.isCurrent ? 'font-bold text-accent' : 'text-white/50'}`}
+                        className={`whitespace-nowrap text-xs ${bar.isCurrent ? 'font-bold text-accent' : 'text-white/50'}`}
                       >
                         {bar.label}
                       </span>

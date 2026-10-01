@@ -29,6 +29,7 @@ export type UsersRow = {
   subscription_expires_at: string | null
   currency_earned: number
   currency_premium: number
+  weekly_goal: number
 }
 
 export type CharactersRow = {
