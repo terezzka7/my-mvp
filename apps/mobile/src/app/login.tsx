@@ -9,6 +9,21 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { assembleCharacter } from '@/lib/finish-onboarding';
 import { supabase } from '@/lib/supabase';
 
+// Tell the user the real reason instead of always blaming the password.
+function describeSignInError(message?: string): string {
+  if (!message) return 'Не удалось войти. Попробуйте ещё раз.';
+  if (/invalid login credentials/i.test(message)) {
+    return 'Неверный email или пароль. Проверьте, нет ли лишних пробелов.';
+  }
+  if (/email not confirmed/i.test(message)) {
+    return 'Почта не подтверждена. Откройте письмо от Buildyfit и перейдите по ссылке.';
+  }
+  if (/network|fetch|timeout/i.test(message)) {
+    return 'Нет связи с сервером. Проверьте интернет и попробуйте ещё раз.';
+  }
+  return `Не удалось войти: ${message}`;
+}
+
 // M-1 Регистрация/авторизация (§13.2). Не отдельный ряд в §9.1 —
 // экран нужен, чтобы вообще попасть на M-02/M-04. Тот же email+пароль
 // упрощение, что и на web (§11.3 Apple ID/Google — отдельный шаг).
@@ -32,12 +47,17 @@ export default function LoginScreen() {
     }
 
     setSubmitting(true);
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    // The iOS keyboard likes to append a space after a suggestion; the web's
+    // type="email" input trims it for us, a plain TextInput does not.
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
     if (signInError || !data.user) {
       setSubmitting(false);
       console.error(signInError);
-      setError('Не удалось войти. Проверьте email и пароль.');
+      setError(describeSignInError(signInError?.message));
       return;
     }
 
@@ -84,6 +104,8 @@ export default function LoginScreen() {
           value={email}
           onChangeText={setEmail}
           autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="email"
           keyboardType="email-address"
           style={styles.input}
           placeholderTextColor={Colors.textMuted}
@@ -96,6 +118,9 @@ export default function LoginScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoCapitalize="none"
+          autoCorrect={false}
+          autoComplete="current-password"
           style={styles.input}
           placeholderTextColor={Colors.textMuted}
         />
