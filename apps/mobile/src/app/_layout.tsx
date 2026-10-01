@@ -67,14 +67,14 @@ export default function RootLayout() {
         <Stack.Screen name="history" />
         <Stack.Screen name="workout-detail" />
         <Stack.Screen name="settings" />
+        {/* Bottom sheet drawn by the screen itself over a transparent modal:
+            the native formSheet rendered an empty body on device. */}
         <Stack.Screen
           name="log-workout"
           options={{
-            presentation: 'formSheet',
-            sheetAllowedDetents: [0.72, 1],
-            sheetInitialDetentIndex: 0,
-            sheetGrabberVisible: true,
-            sheetCornerRadius: 32,
+            presentation: 'transparentModal',
+            animation: 'slide_from_bottom',
+            contentStyle: { backgroundColor: 'transparent' },
           }}
         />
         <Stack.Screen name="level-up" options={{ presentation: 'modal' }} />

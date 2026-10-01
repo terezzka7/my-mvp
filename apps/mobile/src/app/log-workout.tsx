@@ -1,6 +1,14 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
@@ -147,12 +155,19 @@ export default function LogWorkoutScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        automaticallyAdjustKeyboardInsets
-      >
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <Pressable style={styles.backdrop} onPress={() => router.back()} />
+      <View style={styles.sheet}>
+        <View style={styles.grabber} />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          bounces={false}
+        >
         <View style={styles.headerRow}>
           <ThemedText type="overline">Шаг {step} из 2</ThemedText>
           <Pressable onPress={() => router.back()} hitSlop={12}>
@@ -230,8 +245,9 @@ export default function LogWorkoutScreen() {
             {step === 1 ? 'Далее' : saving ? 'Сохранение...' : 'Готово · +XP'}
           </ThemedText>
         </Pressable>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -248,11 +264,33 @@ function Tile({ label, selected, onPress }: { label: string; selected: boolean; 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(0,0,0,.6)',
+  },
+  sheet: {
+    maxHeight: '90%',
     backgroundColor: '#151515',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: Spacing.two,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255,255,255,.3)',
+  },
+  scroll: {
+    flexGrow: 0,
   },
   content: {
     padding: Spacing.four,
     paddingTop: Spacing.three,
+    paddingBottom: Spacing.five + Spacing.three,
     gap: Spacing.three,
   },
   headerRow: {
