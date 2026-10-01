@@ -9,8 +9,9 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import type { UsersRow } from '@/lib/database.types';
 import { supabase } from '@/lib/supabase';
+import { fetchCurrentGoal, saveCurrentGoal } from '@/lib/weekly-goal';
 
-// Same bounds as the check constraint in supabase/add_weekly_goal.sql.
+// Same bounds as the check constraint in supabase/add_weekly_goals.sql.
 const GOAL_MIN = 1;
 const GOAL_MAX = 14;
 
@@ -44,7 +45,7 @@ export default function SettingsScreen() {
   });
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
-  // null = not loaded (or the weekly_goal column isn't there yet): the row is hidden.
+  // null = not loaded (or the weekly_goals table isn't there yet): the row is hidden.
   const [weeklyGoal, setWeeklyGoal] = useState<number | null>(null);
 
   useFocusEffect(
@@ -52,17 +53,10 @@ export default function SettingsScreen() {
       if (!user) return;
       let active = true;
 
-      // Own query so the rest of Settings still loads if this column is missing.
-      supabase
-        .from('users')
-        .select('weekly_goal')
-        .eq('id', user.id)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (!active) return;
-          if (error) console.error(error);
-          else if (data) setWeeklyGoal(data.weekly_goal);
-        });
+      // Own query so the rest of Settings still loads if this table is missing.
+      fetchCurrentGoal(user.id).then((goal) => {
+        if (active && goal !== null) setWeeklyGoal(goal);
+      });
 
       supabase
         .from('users')
@@ -101,18 +95,15 @@ export default function SettingsScreen() {
     }
   }
 
-  // Saves right away, like the toggles. The web Stats page only reads this.
+  // Saves right away, like the toggles, as the goal from this week on (past weeks
+  // keep theirs). The web Stats page only reads it.
   async function changeGoal(delta: number) {
     if (!user || weeklyGoal === null) return;
     const next = Math.min(GOAL_MAX, Math.max(GOAL_MIN, weeklyGoal + delta));
     if (next === weeklyGoal) return;
     const previous = weeklyGoal;
     setWeeklyGoal(next);
-    const { error } = await supabase.from('users').update({ weekly_goal: next }).eq('id', user.id);
-    if (error) {
-      console.error(error);
-      setWeeklyGoal(previous);
-    }
+    if (!(await saveCurrentGoal(user.id, next))) setWeeklyGoal(previous);
   }
 
   async function saveName() {
@@ -208,7 +199,7 @@ export default function SettingsScreen() {
             <View style={styles.goalText}>
               <ThemedText type="body">Цель тренировок в неделю</ThemedText>
               <ThemedText type="bodyMuted" style={styles.goalHint}>
-                Видна в статистике на сайте
+                Действует с этой недели, прошлые не меняются
               </ThemedText>
             </View>
             <View style={styles.stepper}>
