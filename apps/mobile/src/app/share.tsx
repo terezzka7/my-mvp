@@ -5,7 +5,7 @@ import { Pressable, Share, StyleSheet, View } from 'react-native';
 import { Button } from '@/components/button';
 import { HeroPhoto } from '@/components/hero-photo';
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Radius, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { resolveDisplayName } from '@/lib/display-name';
 import { supabase } from '@/lib/supabase';
@@ -69,32 +69,25 @@ export default function ShareScreen() {
 
   return (
     <View style={styles.overlay}>
-      <View style={styles.header}>
-        <ThemedText type="overline">Шеринг-карточка</ThemedText>
-        <Pressable onPress={() => router.back()}>
-          <ThemedText type="body" style={styles.close}>
-            ✕
-          </ThemedText>
-        </Pressable>
-      </View>
-
       {data && (
         <View style={styles.card}>
-          <View style={styles.cardTopRow}>
-            <ThemedText type="title" style={styles.cardBrand}>
-              Buildyfit
+          <Pressable style={styles.close} onPress={() => router.back()} hitSlop={12}>
+            <ThemedText type="body" style={styles.closeLabel}>
+              ✕
             </ThemedText>
-            <ThemedText type="overline" style={styles.cardLevel}>
-              LVL {data.level}
+          </Pressable>
+
+          <View style={styles.cardText}>
+            <ThemedText type="overline">LVL {data.level}</ThemedText>
+            <ThemedText type="title" style={styles.cardName}>
+              {data.name}
+            </ThemedText>
+            <ThemedText type="bodyMuted" style={styles.cardStats}>
+              {data.workouts} тренировок · серия {data.streak} дней
             </ThemedText>
           </View>
-          <HeroPhoto username={data.username} height={220} style={styles.cardImage} />
-          <ThemedText type="display" style={styles.cardName}>
-            {data.name}
-          </ThemedText>
-          <ThemedText type="body" style={styles.cardStats}>
-            {data.workouts} тренировок · серия {data.streak} дней
-          </ThemedText>
+
+          <HeroPhoto username={data.username} height={320} style={styles.cardImage} />
         </View>
       )}
 
@@ -114,42 +107,43 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.six,
     justifyContent: 'flex-start',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: Spacing.three,
+  // Same card as the web ShareCard: dark, hairline border, big rounded
+  // corners, centred level/name/stats, photo bleeding to the bottom edge.
+  card: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.bg,
+    overflow: 'hidden',
   },
   close: {
-    color: Colors.textMuted,
-    fontSize: 20,
+    position: 'absolute',
+    top: Spacing.three,
+    right: Spacing.three + Spacing.two,
+    zIndex: 1,
   },
-  card: {
-    borderRadius: Radius.card,
-    backgroundColor: Colors.accent,
-    padding: Spacing.three,
+  closeLabel: {
+    color: 'rgba(255,255,255,.6)',
+    fontSize: 18,
   },
-  cardTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: Spacing.two,
-  },
-  cardBrand: {
-    color: Colors.accentText,
-  },
-  cardLevel: {
-    color: 'rgba(13,13,13,.55)',
-  },
-  cardImage: {
-    borderRadius: Radius.card,
+  cardText: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.four,
   },
   cardName: {
-    color: Colors.accentText,
+    fontSize: 18,
+    lineHeight: 24,
     marginTop: Spacing.two,
   },
   cardStats: {
-    color: 'rgba(13,13,13,.6)',
+    fontSize: 14,
+    lineHeight: 20,
+    color: 'rgba(255,255,255,.6)',
     marginTop: Spacing.one,
+  },
+  cardImage: {
+    marginTop: Spacing.three,
   },
   actions: {
     marginTop: Spacing.four,
