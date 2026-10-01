@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Pressable, Share, StyleSheet, View } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
 
 import { Button } from '@/components/button';
 import { HeroPhoto } from '@/components/hero-photo';
@@ -18,14 +19,15 @@ interface ShareData {
   streak: number;
 }
 
-// M-11 Шеринг-карточка (§9.1) — модалка. "Отправить" использует
-// нативный Share API (встроен в react-native, без новых пакетов) —
-// открывает системный шеринг-лист, а не постит напрямую в Instagram
-// Stories (для этого нужен отдельный нативный SDK, вне текущего §11).
+// M-11 Шеринг-карточка (§9.1) — модалка. "Поделиться" рендерит карточку
+// в PNG (react-native-view-shot, добавлен с разрешения — его нет в §11) и
+// отдаёт файл нативному Share API: системный шеринг-лист, а не прямой
+// пост в Instagram Stories (для этого нужен отдельный нативный SDK).
 export default function ShareScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [data, setData] = useState<ShareData | null>(null);
+  const captureViewRef = useRef<View>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -56,12 +58,27 @@ export default function ShareScreen() {
     }, [user]),
   );
 
+  // Renders the card to a PNG and hands the file to the system share sheet
+  // (Telegram, Messages, "Save Image"…). If rendering fails, falls back to
+  // sharing the text with the profile link so the button never does nothing.
   async function handleShare() {
     if (!data) return;
+
+    let imageUri: string | null = null;
     try {
-      await Share.share({
-        message: `${data.name} — уровень ${data.level} в Buildyfit. ${data.workouts} тренировок, серия ${data.streak} дней. buildyfit.app/u/${data.username}`,
-      });
+      imageUri = await captureRef(captureViewRef, { format: 'png', quality: 1, result: 'tmpfile' });
+    } catch (err) {
+      console.error(err);
+    }
+
+    try {
+      if (imageUri) {
+        await Share.share({ url: imageUri });
+      } else {
+        await Share.share({
+          message: `${data.name} — уровень ${data.level} в Buildyfit. ${data.workouts} тренировок, серия ${data.streak} дней. buildyfit.app/u/${data.username}`,
+        });
+      }
     } catch (err) {
       console.error(err);
     }
@@ -77,23 +94,25 @@ export default function ShareScreen() {
             </ThemedText>
           </Pressable>
 
-          <View style={styles.cardText}>
-            <ThemedText type="overline">LVL {data.level}</ThemedText>
-            <ThemedText type="title" style={styles.cardName}>
-              {data.name}
-            </ThemedText>
-            <ThemedText type="bodyMuted" style={styles.cardStats}>
-              {data.workouts} тренировок · серия {data.streak} дней
-            </ThemedText>
-          </View>
+          {/* Only this block ends up in the shared picture: the ✕ stays out. */}
+          <View ref={captureViewRef} collapsable={false} style={styles.captured}>
+            <View style={styles.cardText}>
+              <ThemedText type="overline">LVL {data.level}</ThemedText>
+              <ThemedText type="title" style={styles.cardName}>
+                {data.name}
+              </ThemedText>
+              <ThemedText type="bodyMuted" style={styles.cardStats}>
+                {data.workouts} тренировок · серия {data.streak} дней
+              </ThemedText>
+            </View>
 
-          <HeroPhoto username={data.username} height={320} style={styles.cardImage} />
+            <HeroPhoto username={data.username} height={320} style={styles.cardImage} />
+          </View>
         </View>
       )}
 
       <View style={styles.actions}>
         <Button label="Поделиться" onPress={handleShare} />
-        <Button label="Закрыть" variant="secondary" onPress={() => router.back()} />
       </View>
     </View>
   );
@@ -115,6 +134,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     backgroundColor: Colors.bg,
     overflow: 'hidden',
+  },
+  captured: {
+    backgroundColor: Colors.bg,
   },
   close: {
     position: 'absolute',
