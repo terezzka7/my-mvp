@@ -269,7 +269,7 @@ export function Stats() {
                       title={`${bar.label}: ${bar.count} ${plural(bar.count, 'тренировка', 'тренировки', 'тренировок')}`}
                     >
                       <div
-                        className={`relative w-full flex-1 overflow-hidden rounded-full bg-white/[0.07] ${
+                        className={`relative w-8 flex-1 overflow-hidden rounded-full bg-white/[0.07] ${
                           bar.isCurrent ? 'ring-2 ring-accent/40' : ''
                         } ${bar.isFuture ? 'opacity-45' : ''}`}
                       >
