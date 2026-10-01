@@ -13,20 +13,14 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4'
 
+import { computeXp, volumeOf, WORKOUT_TYPES } from '../_shared/xp.ts'
+
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-// Placeholder game-balance numbers — not specified in the book, tune later.
-const BASE_XP = 20
-const MAX_GROWTH_BONUS = 20 // full bonus at +100% growth vs previous log
+// The XP formula itself lives in _shared/xp.ts (also used by preview-workout-xp).
 const LEVEL_UP_MULTIPLIER = 1.5
-
-const WORKOUT_TYPES = ['strength', 'cardio', 'flexibility', 'sports', 'other']
-// How hard the workout felt (mobile log sheet, step 2). Only ever raises XP:
-// the easiest option is 1×, so nobody is "punished" for a light session
-// (Риск 4). Not stored — there is no column for it in §10.
-const INTENSITY_FACTORS: Record<string, number> = { easy: 1, medium: 1.25, hard: 1.5, max: 2 }
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -39,25 +33,6 @@ function jsonResponse(body: unknown, status: number) {
     status,
     headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
   })
-}
-
-function volumeOf(entry: { weight_kg?: number | null; reps?: number | null; duration_minutes?: number | null }) {
-  if (entry.weight_kg != null && entry.reps != null) return entry.weight_kg * entry.reps
-  if (entry.duration_minutes != null) return entry.duration_minutes
-  return null
-}
-
-// XP честно привязан к приросту (Риск 4): без предыдущего лога того же
-// типа — базовый XP за сам факт. С предыдущим — бонус растёт с ростом
-// объёма, но никогда не опускается ниже базового (нет штрафа за застой
-// или регресс).
-function computeXp(previousVolume: number | null, currentVolume: number | null): number {
-  if (previousVolume == null || currentVolume == null || previousVolume <= 0) {
-    return BASE_XP
-  }
-  const growthRatio = (currentVolume - previousVolume) / previousVolume
-  const bonus = Math.round(Math.min(Math.max(growthRatio, 0), 1) * MAX_GROWTH_BONUS)
-  return BASE_XP + bonus
 }
 
 function daysBetween(a: string, b: string): number {
@@ -136,8 +111,7 @@ Deno.serve(async (req) => {
 
   const currentVolume = volumeOf({ weight_kg: body.weight_kg, reps: body.reps, duration_minutes: body.duration_minutes })
   const previousVolume = previous ? volumeOf(previous) : null
-  const intensityFactor = (body.intensity && INTENSITY_FACTORS[body.intensity]) || 1
-  const xpEarned = Math.round(computeXp(previousVolume, currentVolume) * intensityFactor)
+  const xpEarned = computeXp(previousVolume, currentVolume, body.intensity)
   const currencyEarned = Math.round(xpEarned / 2)
 
   // 2. Insert the workout log with the server-computed XP/currency.

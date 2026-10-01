@@ -40,6 +40,24 @@ const EFFORTS: { minutes: number; intensity: Intensity; label: string }[] = [
   { minutes: 90, intensity: 'max', label: '90+ мин · макс' },
 ];
 
+// Weight/reps only count for strength workouts, and only as a pair: both
+// filled (positive numbers) or both empty.
+function readStrength(
+  type: WorkoutType,
+  weight: string,
+  reps: string,
+): { valid: true; weightKg: number | null; repsCount: number | null } | { valid: false } {
+  if (type !== 'strength' || (!weight.trim() && !reps.trim())) {
+    return { valid: true, weightKg: null, repsCount: null };
+  }
+  const weightKg = Number(weight.replace(',', '.'));
+  const repsCount = Number(reps);
+  if (!weight.trim() || !reps.trim() || !(weightKg > 0) || !(repsCount > 0)) {
+    return { valid: false };
+  }
+  return { valid: true, weightKg, repsCount };
+}
+
 interface HeroInfo {
   level: number;
   name: string;
@@ -94,16 +112,12 @@ export default function LogWorkoutScreen() {
       return;
     }
 
-    let weightKg: number | null = null;
-    let repsCount: number | null = null;
-    if (type === 'strength' && (weight.trim() || reps.trim())) {
-      weightKg = Number(weight.replace(',', '.'));
-      repsCount = Number(reps);
-      if (!weight.trim() || !reps.trim() || !(weightKg > 0) || !(repsCount > 0)) {
-        setError('Укажите и вес, и повторы, или оставьте оба поля пустыми.');
-        return;
-      }
+    const strength = readStrength(type, weight, reps);
+    if (!strength.valid) {
+      setError('Укажите и вес, и повторы, или оставьте оба поля пустыми.');
+      return;
     }
+    const { weightKg, repsCount } = strength;
 
     const effort = EFFORTS[effortIndex];
     setError(null);
@@ -142,6 +156,39 @@ export default function LogWorkoutScreen() {
     rememberXpGain(result.xpEarned);
     router.back();
   }
+
+  // Exact XP this workout will earn, asked from the server (same formula as
+  // the one that awards it). Until the answer arrives — or if it can't be
+  // fetched, e.g. offline — the button just says "Готово".
+  const [previewXp, setPreviewXp] = useState<number | null>(null);
+  useEffect(() => {
+    setPreviewXp(null);
+    if (step !== 2 || !type || effortIndex === null || !user) return;
+    const strength = readStrength(type, weight, reps);
+    if (!strength.valid) return;
+
+    const effort = EFFORTS[effortIndex];
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const { data, error: previewError } = await supabase.functions.invoke('preview-workout-xp', {
+        body: {
+          type,
+          weight_kg: strength.weightKg,
+          reps: strength.repsCount,
+          duration_minutes: effort.minutes,
+          intensity: effort.intensity,
+        },
+      });
+      if (cancelled) return;
+      if (previewError) console.error('preview-workout-xp failed:', previewError.message);
+      setPreviewXp(!previewError && typeof data?.xpEarned === 'number' ? data.xpEarned : null);
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [step, type, effortIndex, weight, reps, user]);
 
   const canContinue = step === 1 ? type !== null : effortIndex !== null && !saving;
 
@@ -242,7 +289,13 @@ export default function LogWorkoutScreen() {
           style={[styles.primary, canContinue ? styles.primaryOn : styles.primaryOff]}
         >
           <ThemedText type="title" style={canContinue ? styles.primaryLabelOn : styles.primaryLabelOff}>
-            {step === 1 ? 'Далее' : saving ? 'Сохранение...' : 'Готово · +XP'}
+            {step === 1
+              ? 'Далее'
+              : saving
+                ? 'Сохранение...'
+                : previewXp !== null
+                  ? `+${previewXp} XP`
+                  : 'Готово'}
           </ThemedText>
         </Pressable>
         </ScrollView>
