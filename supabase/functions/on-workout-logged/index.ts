@@ -23,6 +23,10 @@ const MAX_GROWTH_BONUS = 20 // full bonus at +100% growth vs previous log
 const LEVEL_UP_MULTIPLIER = 1.5
 
 const WORKOUT_TYPES = ['strength', 'cardio', 'flexibility', 'sports', 'other']
+// How hard the workout felt (mobile log sheet, step 2). Only ever raises XP:
+// the easiest option is 1×, so nobody is "punished" for a light session
+// (Риск 4). Not stored — there is no column for it in §10.
+const INTENSITY_FACTORS: Record<string, number> = { easy: 1, medium: 1.25, hard: 1.5, max: 2 }
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -97,6 +101,7 @@ Deno.serve(async (req) => {
     type?: string
     weight_kg?: number | null
     reps?: number | null
+    intensity?: string | null
     duration_minutes?: number | null
     note?: string | null
     logged_at?: string
@@ -131,7 +136,8 @@ Deno.serve(async (req) => {
 
   const currentVolume = volumeOf({ weight_kg: body.weight_kg, reps: body.reps, duration_minutes: body.duration_minutes })
   const previousVolume = previous ? volumeOf(previous) : null
-  const xpEarned = computeXp(previousVolume, currentVolume)
+  const intensityFactor = (body.intensity && INTENSITY_FACTORS[body.intensity]) || 1
+  const xpEarned = Math.round(computeXp(previousVolume, currentVolume) * intensityFactor)
   const currencyEarned = Math.round(xpEarned / 2)
 
   // 2. Insert the workout log with the server-computed XP/currency.

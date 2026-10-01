@@ -10,6 +10,7 @@ import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { flushWorkoutLogQueue, getPendingCount } from '@/lib/offline-queue';
 import { supabase } from '@/lib/supabase';
+import { markLevelUpShown, takeXpGain, wasLevelUpShown } from '@/lib/workout-result';
 
 interface CharacterData {
   name: string;
@@ -43,6 +44,18 @@ export default function HomeScreen() {
   const [pendingCount, setPendingCount] = useState(0);
   const [loggedDays, setLoggedDays] = useState<boolean[]>(new Array(7).fill(false));
   const lastKnownLevel = useRef<number | null>(null);
+  const [xpToast, setXpToast] = useState<number | null>(null);
+
+  // "+N XP" left by the log sheet when the workout didn't level you up.
+  useFocusEffect(
+    useCallback(() => {
+      const xp = takeXpGain();
+      if (xp == null) return;
+      setXpToast(xp);
+      const timer = setTimeout(() => setXpToast(null), 2500);
+      return () => clearTimeout(timer);
+    }, []),
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -114,10 +127,22 @@ export default function HomeScreen() {
         });
         setLoading(false);
 
-        if (lastKnownLevel.current != null && characterRow.level > lastKnownLevel.current) {
+        // Catches level-ups that happened without the log sheet seeing the
+        // server's answer (e.g. a queued workout synced just now). The sheet
+        // marks levels it already celebrated so this doesn't open twice.
+        if (
+          lastKnownLevel.current != null &&
+          characterRow.level > lastKnownLevel.current &&
+          !wasLevelUpShown(characterRow.level)
+        ) {
+          markLevelUpShown(characterRow.level);
           router.push({
             pathname: '/level-up',
-            params: { level: String(characterRow.level), heroName: characterRow.name },
+            params: {
+              level: String(characterRow.level),
+              heroName: characterRow.name,
+              username: me?.username ?? '',
+            },
           });
         }
         lastKnownLevel.current = characterRow.level;
@@ -132,6 +157,13 @@ export default function HomeScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {xpToast !== null && (
+        <View style={styles.toast} pointerEvents="none">
+          <ThemedText type="title" style={styles.toastLabel}>
+            +{xpToast} XP
+          </ThemedText>
+        </View>
+      )}
       <ScrollView contentContainerStyle={styles.content}>
         {loading && <ThemedText type="bodyMuted">Загрузка...</ThemedText>}
         {error && <ThemedText style={styles.error}>{error}</ThemedText>}
@@ -207,6 +239,19 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     paddingTop: Spacing.six,
     gap: Spacing.three,
+  },
+  toast: {
+    position: 'absolute',
+    top: Spacing.five + Spacing.three,
+    alignSelf: 'center',
+    zIndex: 10,
+    backgroundColor: Colors.accent,
+    borderRadius: Radius.pill,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.four,
+  },
+  toastLabel: {
+    color: Colors.accentText,
   },
   headerRow: {
     flexDirection: 'row',

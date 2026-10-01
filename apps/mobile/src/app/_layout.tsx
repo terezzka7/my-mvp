@@ -67,7 +67,16 @@ export default function RootLayout() {
         <Stack.Screen name="history" />
         <Stack.Screen name="workout-detail" />
         <Stack.Screen name="settings" />
-        <Stack.Screen name="log-workout" options={{ presentation: 'modal' }} />
+        <Stack.Screen
+          name="log-workout"
+          options={{
+            presentation: 'formSheet',
+            sheetAllowedDetents: [0.72, 1],
+            sheetInitialDetentIndex: 0,
+            sheetGrabberVisible: true,
+            sheetCornerRadius: 32,
+          }}
+        />
         <Stack.Screen name="level-up" options={{ presentation: 'modal' }} />
         <Stack.Screen name="share" options={{ presentation: 'modal' }} />
         <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
