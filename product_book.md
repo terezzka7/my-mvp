@@ -719,7 +719,6 @@ Email → Universal Link → M-04 или W-04
 | subscription_expires_at | timestamptz | Дата истечения | Нет |
 | currency_earned | integer | Баланс зарабатываемой валюты | Да |
 | currency_premium | integer | Баланс премиум-валюты | Да |
-| weekly_goal | integer | Устарело: приложения больше не читают и не пишут эту колонку, цель по неделям хранится в `weekly_goals` (см. ниже). Осталась только как источник для стартовой записи истории — supabase/add_weekly_goals.sql | Да |
 
 ### Таблица: characters (1:1 → users)
 
