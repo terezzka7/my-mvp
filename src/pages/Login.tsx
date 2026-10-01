@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
+import { OAuthButtons } from '../components/OAuthButtons'
 import { supabase } from '../lib/supabase'
 
 export function Login() {
@@ -63,27 +64,9 @@ export function Login() {
           {error && <p className="text-sm text-red-400">{error}</p>}
         </form>
 
-        <div className="mt-6 flex flex-col gap-3">
-          <button
-            type="button"
-            disabled
-            title="Упрощение этого шага: OAuth пока не подключён, только email+пароль"
-            className="cursor-not-allowed rounded-full border border-white/20 px-6 py-3 font-semibold text-white/30"
-          >
-            Войти через Apple ID
-          </button>
-          <button
-            type="button"
-            disabled
-            title="Упрощение этого шага: OAuth пока не подключён, только email+пароль"
-            className="cursor-not-allowed rounded-full border border-white/20 px-6 py-3 font-semibold text-white/30"
-          >
-            Войти через Google
-          </button>
+        <div className="mt-6">
+          <OAuthButtons />
         </div>
-        <p className="mt-2 text-center text-xs text-white/30">
-          Apple ID / Google из §11.3 — намеренное упрощение, пока не подключены
-        </p>
 
         <p className="mt-8 text-center text-sm text-white/50">
           Нет аккаунта?{' '}

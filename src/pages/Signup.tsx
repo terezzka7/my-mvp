@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Header } from '../components/Header'
+import { OAuthButtons } from '../components/OAuthButtons'
 import { supabase } from '../lib/supabase'
 
 export function Signup() {
@@ -90,6 +91,10 @@ export function Signup() {
           {error && <p className="text-sm text-red-400">{error}</p>}
           {checkEmailMessage && <p className="text-sm text-accent">{checkEmailMessage}</p>}
         </form>
+
+        <div className="mt-6">
+          <OAuthButtons />
+        </div>
 
         <p className="mt-8 text-center text-sm text-white/50">
           Уже есть аккаунт?{' '}
