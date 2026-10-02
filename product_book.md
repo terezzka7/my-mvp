@@ -888,7 +888,7 @@ characters → template_assets (body_template_id, style_template_id — спра
 | characters | auth.uid() = user_id; публичные поля для /u/ | auth.uid() = user_id | auth.uid() = user_id | Запрещено |
 | workout_logs | auth.uid() = user_id | auth.uid() = user_id | auth.uid() = user_id (note) | auth.uid() = user_id |
 | challenges | Все авторизованные | service_role | service_role | service_role |
-| user_challenges | auth.uid() = user_id | auth.uid() = user_id | Edge Function | Запрещено |
+| user_challenges | auth.uid() = user_id | auth.uid() = user_id | Edge Function | Клиенту запрещено; «Покинуть челлендж» (M-08) через Edge Function leave-challenge: удаляет только свою активную запись |
 | items | Все авторизованные | service_role | service_role | service_role |
 | user_items | auth.uid() = user_id | Edge Function | Запрещено | Запрещено |
 | share_cards | auth.uid() = user_id | auth.uid() = user_id | Запрещено | Запрещено |

@@ -1,12 +1,15 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import Svg, { Path, Rect } from 'react-native-svg';
 
 import { Button } from '@/components/button';
+import { HeroPhoto } from '@/components/hero-photo';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Radius, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
+import { plural } from '@/lib/stats';
 import { supabase } from '@/lib/supabase';
 import type { ItemSlot, ItemsRow } from '@/lib/database.types';
 
@@ -19,35 +22,54 @@ const SLOT_LABELS: Record<ItemSlot, string> = {
   card_frame: 'Рамка',
 };
 
-// M-09 Кастомизация персонажа (§9.1). Владение — user_items, экипировка
-// — characters.equipped_items (uuid[]), которое RLS разрешает
-// обновлять владельцу напрямую (без Edge Function). Один предмет на
-// слот: экипировка нового предмета в слоте снимает предыдущий из
-// того же слота.
+// Lucide "lock" (ISC): the item is in the shop, not yet yours.
+function LockIcon() {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={Colors.text} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Rect width={18} height={11} x={3} y={11} rx={2} ry={2} />
+      <Path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </Svg>
+  );
+}
+
+// M-09 Кастомизация персонажа (§9.1). Каталог — items (читают все
+// авторизованные), владение — user_items, экипировка —
+// characters.equipped_items (uuid[]), которое RLS разрешает обновлять
+// владельцу напрямую. Выбор копится локально и записывается кнопкой
+// «Сохранить». Один предмет на слот: новый предмет слота заменяет
+// прежний. Закрытый предмет (не куплен) ведёт в карточку магазина.
 export default function CustomizeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const [ownedItems, setOwnedItems] = useState<ItemsRow[]>([]);
-  const [equipped, setEquipped] = useState<string[]>([]);
+  const [items, setItems] = useState<ItemsRow[]>([]);
+  const [ownedIds, setOwnedIds] = useState<Set<string>>(new Set());
+  const [saved, setSaved] = useState<string[]>([]);
+  const [draft, setDraft] = useState<string[]>([]);
+  const [username, setUsername] = useState<string | null>(null);
   const [cat, setCat] = useState<ItemSlot | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!user) return;
-    const [{ data: owned, error: ownedError }, { data: characterRow, error: characterError }] =
-      await Promise.all([
-        supabase.from('user_items').select('items(*)').eq('user_id', user.id),
-        supabase.from('characters').select('equipped_items').eq('user_id', user.id).maybeSingle(),
-      ]);
-    if (ownedError) console.error(ownedError);
-    if (characterError) console.error(characterError);
+    const [catalog, owned, character, me] = await Promise.all([
+      supabase.from('items').select('*').order('created_at', { ascending: true }),
+      supabase.from('user_items').select('item_id').eq('user_id', user.id),
+      supabase.from('characters').select('equipped_items').eq('user_id', user.id).maybeSingle(),
+      supabase.from('users').select('username').eq('id', user.id).maybeSingle(),
+    ]);
+    for (const result of [catalog, owned, character, me]) {
+      if (result.error) console.error(result.error);
+    }
 
-    const items = (owned ?? [])
-      .map((row) => row.items as unknown as ItemsRow | null)
-      .filter((it): it is ItemsRow => !!it);
-    setOwnedItems(items);
-    setEquipped(characterRow?.equipped_items ?? []);
-    setCat((prev) => prev ?? items[0]?.slot ?? null);
+    const all = (catalog.data ?? []).filter((it) => !!it.slot);
+    const equippedNow = character.data?.equipped_items ?? [];
+    setItems(all);
+    setOwnedIds(new Set((owned.data ?? []).map((row) => row.item_id)));
+    setSaved(equippedNow);
+    setDraft(equippedNow);
+    setUsername(me.data?.username ?? null);
+    setCat((prev) => prev ?? all[0]?.slot ?? null);
     setLoading(false);
   }, [user]);
 
@@ -57,37 +79,55 @@ export default function CustomizeScreen() {
     }, [load]),
   );
 
-  const categories = Array.from(new Set(ownedItems.map((it) => it.slot).filter((s): s is ItemSlot => !!s)));
-  const visibleItems = ownedItems.filter((it) => it.slot === cat);
+  const categories = Array.from(new Set(items.map((it) => it.slot).filter((s): s is ItemSlot => !!s)));
+  const visibleItems = items.filter((it) => it.slot === cat);
+  // Only items that are still owned count as worn.
+  const worn = draft.filter((id) => ownedIds.has(id));
+  const changed = draft.length !== saved.length || draft.some((id) => !saved.includes(id));
 
-  async function handleEquip(item: ItemsRow) {
+  function handlePick(item: ItemsRow) {
+    if (!ownedIds.has(item.id)) {
+      router.push({ pathname: '/shop-detail', params: { id: item.id } });
+      return;
+    }
+    if (draft.includes(item.id)) {
+      setDraft(draft.filter((id) => id !== item.id));
+      return;
+    }
+    const withoutSlot = draft.filter((id) => items.find((it) => it.id === id)?.slot !== item.slot);
+    setDraft([...withoutSlot, item.id]);
+  }
+
+  async function handleSave() {
     if (!user) return;
-    const withoutSlot = equipped.filter((id) => {
-      const owned = ownedItems.find((it) => it.id === id);
-      return owned?.slot !== item.slot;
-    });
-    const next = [...withoutSlot, item.id];
-    setEquipped(next);
-    const { error } = await supabase.from('characters').update({ equipped_items: next }).eq('user_id', user.id);
-    if (error) console.error(error);
+    if (changed) {
+      setSaving(true);
+      const { error } = await supabase.from('characters').update({ equipped_items: draft }).eq('user_id', user.id);
+      setSaving(false);
+      if (error) {
+        console.error(error);
+        return;
+      }
+      setSaved(draft);
+    }
+    router.replace('/home');
   }
 
   return (
     <ThemedView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <Pressable onPress={() => router.replace('/home')}>
-          <ThemedText type="overline">← Home</ThemedText>
+          <ThemedText type="overline">← Дом</ThemedText>
         </Pressable>
 
-        <ThemedText type="display" style={styles.title}>
-          Кастомизация
-        </ThemedText>
+        <View style={styles.preview}>
+          <HeroPhoto username={username} height={220} />
+          <ThemedText type="bodyMuted" style={styles.previewCaption}>
+            Надето: {worn.length} {plural(worn.length, 'предмет', 'предмета', 'предметов')}
+          </ThemedText>
+        </View>
 
         {loading && <ThemedText type="bodyMuted">Загрузка...</ThemedText>}
-
-        {!loading && ownedItems.length === 0 && (
-          <ThemedText type="bodyMuted">Пока нет купленных предметов — загляни в магазин.</ThemedText>
-        )}
 
         {categories.length > 0 && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -109,15 +149,30 @@ export default function CustomizeScreen() {
 
         <View style={styles.grid}>
           {visibleItems.map((item) => {
-            const isEquipped = equipped.includes(item.id);
+            const isOwned = ownedIds.has(item.id);
+            const isWorn = draft.includes(item.id) && isOwned;
             return (
               <Pressable
                 key={item.id}
-                onPress={() => handleEquip(item)}
-                style={[styles.itemCard, isEquipped && styles.itemCardActive]}
+                onPress={() => handlePick(item)}
+                style={[styles.itemCard, isWorn && styles.itemCardActive]}
+                accessibilityLabel={`${item.name}${isOwned ? '' : ', закрыто'}`}
               >
-                <Image source={{ uri: item.image_url }} style={styles.itemImage} resizeMode="cover" />
-                <ThemedText type="bodyMuted" style={isEquipped ? styles.itemNameActive : undefined}>
+                <View style={styles.itemImageWrap}>
+                  <Image
+                    source={{ uri: item.image_url }}
+                    style={[styles.itemImage, !isOwned && styles.itemImageLocked]}
+                    resizeMode="cover"
+                  />
+                  <View style={styles.itemMark}>
+                    {!isOwned ? (
+                      <LockIcon />
+                    ) : (
+                      <View style={[styles.markDot, isWorn ? styles.markDotOn : styles.markDotOff]} />
+                    )}
+                  </View>
+                </View>
+                <ThemedText type="bodyMuted" numberOfLines={1} style={isWorn ? styles.itemNameActive : undefined}>
                   {item.name}
                 </ThemedText>
               </Pressable>
@@ -126,7 +181,7 @@ export default function CustomizeScreen() {
         </View>
 
         <Button label="Открыть магазин" variant="secondary" onPress={() => router.push('/shop')} />
-        <Button label="Сохранить" onPress={() => router.replace('/home')} />
+        <Button label={saving ? 'Сохраняем...' : 'Сохранить'} onPress={handleSave} disabled={saving} />
       </ScrollView>
     </ThemedView>
   );
@@ -139,16 +194,24 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.six,
     gap: Spacing.three,
   },
-  title: {
-    marginTop: Spacing.two,
+  preview: {
+    borderRadius: Radius.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surface,
+    overflow: 'hidden',
+  },
+  previewCaption: {
+    padding: Spacing.three,
   },
   catRow: {
     flexDirection: 'row',
     gap: Spacing.two,
   },
   catChip: {
+    minHeight: 44,
+    justifyContent: 'center',
     borderRadius: Radius.pill,
-    paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     backgroundColor: Colors.surface,
     borderWidth: 1,
@@ -179,11 +242,38 @@ const styles = StyleSheet.create({
   itemCardActive: {
     borderColor: Colors.accent,
   },
-  itemImage: {
+  itemImageWrap: {
     width: '100%',
-    height: 64,
+    height: 72,
     borderRadius: Radius.card,
     backgroundColor: Colors.bg,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  itemImage: {
+    ...StyleSheet.absoluteFill,
+    width: '100%',
+    height: '100%',
+  },
+  itemImageLocked: {
+    opacity: 0.35,
+  },
+  itemMark: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  markDotOn: {
+    backgroundColor: Colors.accent,
+  },
+  markDotOff: {
+    borderWidth: 2,
+    borderColor: Colors.textMuted,
   },
   itemNameActive: {
     color: Colors.accent,

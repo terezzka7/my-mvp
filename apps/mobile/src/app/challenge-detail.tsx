@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
@@ -10,10 +10,32 @@ import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/lib/supabase';
 import type { ChallengesRow, UserChallengesRow } from '@/lib/database.types';
 
+// What actually counts towards the challenge, taken from how on-workout-logged
+// bumps progress for each type (nothing here is a rule the server doesn't apply).
+function rulesFor(challenge: ChallengesRow): string[] {
+  const live = 'Прогресс обновляется сразу после логирования';
+  switch (challenge.type) {
+    case 'streak':
+      return [
+        'Считается текущая серия дней с тренировками',
+        'Пропуск не сбрасывает серию, но и не продвигает прогресс',
+        live,
+      ];
+    case 'duration_total':
+      return [
+        'Считаются минуты залогированных тренировок',
+        'Минуты примерные: 20, 40, 60 или 90 по выбору при записи',
+        live,
+      ];
+    default:
+      return ['Считается любая залогированная тренировка', live];
+  }
+}
+
 // M-08 Детали челленджа (§9.1). "Участвовать" — прямой клиентский
-// insert в user_challenges (RLS это разрешает own-insert). Обратного
-// действия ("покинуть") нет — на user_challenges нет ни UPDATE, ни
-// DELETE политики для клиента (§10), только Edge Function.
+// insert в user_challenges (RLS это разрешает own-insert). "Покинуть" —
+// Edge Function leave-challenge: на user_challenges у клиента нет ни
+// UPDATE, ни DELETE политики (§10).
 export default function ChallengeDetailScreen() {
   const router = useRouter();
   const { user } = useAuth();
@@ -22,6 +44,7 @@ export default function ChallengeDetailScreen() {
   const [userChallenge, setUserChallenge] = useState<UserChallengesRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState(false);
+  const [leaving, setLeaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -58,6 +81,29 @@ export default function ChallengeDetailScreen() {
       return;
     }
     load();
+  }
+
+  async function handleLeave() {
+    if (!challenge) return;
+    setLeaving(true);
+    setError(null);
+    const { error: leaveError } = await supabase.functions.invoke('leave-challenge', {
+      body: { challenge_id: challenge.id },
+    });
+    setLeaving(false);
+    if (leaveError) {
+      console.error(leaveError);
+      setError('Не удалось покинуть челлендж. Попробуйте ещё раз.');
+      return;
+    }
+    router.back();
+  }
+
+  function confirmLeave() {
+    Alert.alert('Покинуть челлендж?', 'Прогресс по нему будет потерян. Позже можно присоединиться снова с нуля.', [
+      { text: 'Остаться', style: 'cancel' },
+      { text: 'Покинуть', style: 'destructive', onPress: handleLeave },
+    ]);
   }
 
   if (loading || !challenge) {
@@ -111,13 +157,34 @@ export default function ChallengeDetailScreen() {
           </View>
         </View>
 
+        <View style={styles.card}>
+          <ThemedText type="overline" style={styles.rulesTitle}>
+            Правила
+          </ThemedText>
+          {rulesFor(challenge).map((rule) => (
+            <View key={rule} style={styles.ruleRow}>
+              <View style={styles.ruleDot} />
+              <ThemedText type="body" style={styles.ruleText}>
+                {rule}
+              </ThemedText>
+            </View>
+          ))}
+        </View>
+
         {error && <ThemedText style={styles.error}>{error}</ThemedText>}
 
-        <Button
-          label={userChallenge ? 'Вы участвуете' : joining ? 'Присоединяем...' : 'Участвовать'}
-          onPress={handleJoin}
-          disabled={!!userChallenge || joining}
-        />
+        {!userChallenge && (
+          <Button label={joining ? 'Присоединяем...' : 'Участвовать'} onPress={handleJoin} disabled={joining} />
+        )}
+        {userChallenge?.status === 'active' && (
+          <Button
+            label={leaving ? 'Выходим...' : 'Покинуть челлендж'}
+            variant="secondary"
+            onPress={confirmLeave}
+            disabled={leaving}
+          />
+        )}
+        {userChallenge?.status === 'completed' && <ThemedText type="bodyMuted">Челлендж выполнен.</ThemedText>}
       </ScrollView>
     </ThemedView>
   );
@@ -173,6 +240,24 @@ const styles = StyleSheet.create({
   },
   rewardValue: {
     color: Colors.accent,
+  },
+  rulesTitle: {
+    color: Colors.textMuted,
+  },
+  ruleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+  },
+  ruleDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 7,
+    backgroundColor: Colors.accent,
+  },
+  ruleText: {
+    flex: 1,
   },
   error: {
     color: '#ff6b6b',
