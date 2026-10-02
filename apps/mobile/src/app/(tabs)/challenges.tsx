@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
-    padding: Spacing.three,
+    padding: Spacing.card,
     gap: Spacing.two,
   },
   cardTopRow: {

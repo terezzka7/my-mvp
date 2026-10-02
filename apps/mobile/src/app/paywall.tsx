@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
-    padding: Spacing.three,
+    padding: Spacing.card,
   },
   planRowActive: {
     borderColor: Colors.accent,

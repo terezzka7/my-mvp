@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
-    padding: Spacing.three,
+    padding: Spacing.card,
     gap: Spacing.two,
   },
   cardTopRow: {
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
   },
   stat: {
     flex: 1,
-    borderRadius: Radius.card,
+    borderRadius: Radius.tile,
     backgroundColor: Colors.bg,
     padding: Spacing.two,
     gap: Spacing.one,

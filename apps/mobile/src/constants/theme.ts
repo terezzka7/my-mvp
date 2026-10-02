@@ -27,12 +27,14 @@ export const Spacing = {
   one: 4,
   two: 8,
   three: 16,
+  card: 20, // inner padding of a card (radius 24)
   four: 24,
   five: 32,
   six: 64,
 } as const;
 
 export const Radius = {
-  card: 16,
+  card: 24,
+  tile: 16,
   pill: 999,
 } as const;

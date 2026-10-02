@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   itemImage: {
     width: '100%',
     height: 90,
-    borderRadius: Radius.card,
+    borderRadius: Radius.tile,
     backgroundColor: Colors.bg,
     marginBottom: Spacing.one,
   },

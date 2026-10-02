@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     width: '31%',
-    borderRadius: Radius.card,
+    borderRadius: Radius.tile,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   itemImageWrap: {
     width: '100%',
     height: 72,
-    borderRadius: Radius.card,
+    borderRadius: Radius.tile,
     backgroundColor: Colors.bg,
     overflow: 'hidden',
     alignItems: 'center',

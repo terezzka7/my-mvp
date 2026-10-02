@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
   proBanner: {
     backgroundColor: Colors.accent,
     borderRadius: Radius.card,
-    padding: Spacing.three,
+    padding: Spacing.card,
     gap: Spacing.one,
   },
   proOverline: {
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.border,
     backgroundColor: Colors.surface,
-    padding: Spacing.three,
+    padding: Spacing.card,
   },
   goalText: {
     flex: 1,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: Spacing.three,
+    padding: Spacing.card,
     gap: Spacing.two,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: Spacing.three,
+    padding: Spacing.card,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
   },
