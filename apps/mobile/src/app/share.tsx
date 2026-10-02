@@ -6,6 +6,7 @@ import { captureRef } from 'react-native-view-shot';
 import { Button } from '@/components/button';
 import { HeroPhoto } from '@/components/hero-photo';
 import { ThemedText } from '@/components/themed-text';
+import { WEB_URL } from '@/constants/links';
 import { Colors, Spacing } from '@/constants/theme';
 import { useAuth } from '@/hooks/use-auth';
 import { resolveDisplayName } from '@/lib/display-name';
@@ -76,7 +77,7 @@ export default function ShareScreen() {
         await Share.share({ url: imageUri });
       } else {
         await Share.share({
-          message: `${data.name} — уровень ${data.level} в Buildyfit. ${data.workouts} тренировок, серия ${data.streak} дней. buildyfit.app/u/${data.username}`,
+          message: `${data.name} — уровень ${data.level} в Buildyfit. ${data.workouts} тренировок, серия ${data.streak} дней. ${WEB_URL}/u/${data.username}`,
         });
       }
     } catch (err) {

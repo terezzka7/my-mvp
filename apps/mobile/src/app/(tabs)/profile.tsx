@@ -109,12 +109,6 @@ export function ProfileView({ data }: { data: ProfileData }) {
             <ThemedText type="title" style={styles.name} numberOfLines={1}>
               {data.name}
             </ThemedText>
-            <View style={styles.linkPill}>
-              <LucideIcon name="link" color={Colors.textMuted} size={14} />
-              <ThemedText type="bodyMuted" style={styles.linkText} numberOfLines={1} ellipsizeMode="tail">
-                buildyfit.app/u/{data.username}
-              </ThemedText>
-            </View>
           </View>
         </View>
 
@@ -228,25 +222,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   name: {
-    fontSize: 22,
-    lineHeight: 28,
-  },
-  linkPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one + Spacing.half,
-    maxWidth: '100%',
-    height: 32,
-    paddingHorizontal: Spacing.three - Spacing.one,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surface,
-  },
-  linkText: {
-    flexShrink: 1,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 24,
+    lineHeight: 30,
   },
   card: {
     borderRadius: Radius.card,
