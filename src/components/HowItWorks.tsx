@@ -25,7 +25,8 @@ const DASH = 'border-dashed border-white/55'
 
 function Pill({ index, title }: { index: number; title: string }) {
   return (
-    <span className="relative z-10 inline-flex h-14 items-center gap-3 whitespace-nowrap rounded-full bg-white pl-3 pr-6 text-lg font-semibold text-bg">
+    // Hovering the whole step (the parent has `group`) grows the pill a little.
+    <span className="relative z-10 inline-flex h-14 items-center gap-3 whitespace-nowrap rounded-full bg-white pl-3 pr-6 text-lg font-semibold text-bg transition duration-200 ease-out group-hover:scale-[1.08] group-hover:shadow-[0_0_0_4px_rgba(198,255,0,0.3)]">
       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent text-xs font-extrabold">
         {String(index + 1).padStart(2, '0')}
       </span>
@@ -67,21 +68,23 @@ export function HowItWorks() {
         {STEPS.map((step, index) => {
           const arrow = ARROWS[index]
           return (
-            <li key={step.title} className="absolute w-[270px]" style={SNAKE_POSITIONS[index]}>
+            <li key={step.title} className="group absolute w-[270px]" style={SNAKE_POSITIONS[index]}>
               <span className="relative inline-block">
                 {arrow === 'right' && (
-                  <span aria-hidden="true" className="absolute right-full top-7 mr-2 h-px w-[82px] bg-white">
+                  <span aria-hidden="true" className="absolute right-full top-7 mr-3 h-px w-[78px] bg-white">
                     <span className="absolute -right-px -top-[3px] h-[7px] w-[7px] rotate-45 border-r border-t border-white" />
                   </span>
                 )}
                 {arrow === 'left' && (
-                  <span aria-hidden="true" className="absolute left-full top-7 ml-2 h-px w-[82px] bg-white">
+                  <span aria-hidden="true" className="absolute left-full top-7 ml-3 h-px w-[78px] bg-white">
                     <span className="absolute -left-px -top-[3px] h-[7px] w-[7px] rotate-[-135deg] border-r border-t border-white" />
                   </span>
                 )}
                 <Pill index={index} title={step.title} />
               </span>
-              <p className="ml-3 mt-3.5 max-w-[250px] text-base leading-relaxed text-white/60">{step.text}</p>
+              <p className="ml-3 mt-3.5 max-w-[250px] text-base leading-relaxed text-white/60 transition-colors duration-200 group-hover:text-white">
+                {step.text}
+              </p>
             </li>
           )
         })}
@@ -90,9 +93,11 @@ export function HowItWorks() {
       {/* Phone and tablet: the same road, going down */}
       <ol className="mt-10 flex flex-col lg:hidden">
         {STEPS.map((step, index) => (
-          <li key={step.title}>
+          <li key={step.title} className="group">
             <Pill index={index} title={step.title} />
-            <p className="ml-3 mt-3.5 text-base leading-relaxed text-white/60">{step.text}</p>
+            <p className="ml-3 mt-3.5 text-base leading-relaxed text-white/60 transition-colors duration-200 group-hover:text-white">
+              {step.text}
+            </p>
             {index < STEPS.length - 1 ? (
               <span aria-hidden="true" className={`relative mb-6 ml-[22px] mt-5 block h-10 w-px border-l ${DASH}`}>
                 <span className="absolute -bottom-px -left-[4px] h-[7px] w-[7px] rotate-[135deg] border-r border-t border-white" />
