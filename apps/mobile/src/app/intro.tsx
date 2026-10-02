@@ -20,15 +20,6 @@ export default function IntroScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Behind everything: the button stands in front of the hero's hip, like in the design. */}
-      <View style={styles.heroLayer} pointerEvents="none">
-        <Image
-          source={require('@/assets/images/intro-hero.png')}
-          style={{ width: heroWidth, height: heroWidth * HERO_ASPECT }}
-          resizeMode="contain"
-        />
-      </View>
-
       <View style={styles.copy}>
         <ThemedText type="display" style={styles.text}>
           Трекай тренировки{'\n'}за 2 тапа{'\n'}
@@ -39,7 +30,17 @@ export default function IntroScreen() {
         </ThemedText>
       </View>
 
-      <Button label="Собрать персонажа" onPress={() => router.push('/onboarding')} />
+      {/* Right padding keeps the label clear of the hero's hip in front of the button's right end. */}
+      <Button label="Собрать персонажа" style={styles.cta} onPress={() => router.push('/onboarding')} />
+
+      {/* Drawn last: the hero stands in front of the button. Touches pass through, so the whole button still works. */}
+      <View style={styles.heroLayer} pointerEvents="none">
+        <Image
+          source={require('@/assets/images/intro-hero.png')}
+          style={{ width: heroWidth, height: heroWidth * HERO_ASPECT }}
+          resizeMode="contain"
+        />
+      </View>
     </View>
   );
 }
@@ -66,6 +67,9 @@ const styles = StyleSheet.create({
     color: Colors.accent,
     fontSize: 27,
     lineHeight: 31,
+  },
+  cta: {
+    paddingRight: Spacing.six,
   },
   heroLayer: {
     position: 'absolute',
